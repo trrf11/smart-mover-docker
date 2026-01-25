@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>SmartMover</Name>
+  <Repository>trrf11/smart-mover-docker</Repository>
+  <Registry>https://hub.docker.com/r/trrf11/smart-mover-docker</Registry>
+  <Network>bridge</Network>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/trrf11/smart-mover-docker/issues</Support>
+  <Project>https://github.com/trrf11/smart-mover-docker</Project>
+  <Overview>
+    Smart Mover - Intelligently move watched media from cache to array based on Jellyfin playback status.
+
+    Features:
+    - Web UI for configuration and monitoring
+    - Moves watched movies and TV shows from cache to array
+    - Supports dry-run mode for testing
+    - Configurable cache threshold
+    - Detailed logging
+  </Overview>
+  <Category>MediaApp:Video Tools:</Category>
+  <WebUI>http://[IP]:[PORT:7878]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/trrf11/smart-mover-docker/main/unraid-template.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/trrf11/smart-mover-docker/main/icon.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled></DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="Web UI Port" Target="7878" Default="7878" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">7878</Config>
+  <Config Name="Config Path" Target="/config" Default="/mnt/user/appdata/smart-mover" Mode="rw" Description="Configuration and logs storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/smart-mover</Config>
+  <Config Name="Cache Drive" Target="/mnt/cache" Default="/mnt/cache" Mode="rw" Description="Path to cache drive" Type="Path" Display="always" Required="true" Mask="false">/mnt/cache</Config>
+  <Config Name="Array Destination" Target="/mnt/disk1" Default="/mnt/disk1" Mode="rw" Description="Destination path on array" Type="Path" Display="always" Required="true" Mask="false">/mnt/disk1</Config>
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User ID for permissions" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group ID for permissions" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
+  <Config Name="Timezone" Target="TZ" Default="America/New_York" Mode="" Description="Timezone" Type="Variable" Display="advanced" Required="false" Mask="false">America/New_York</Config>
+</Container>

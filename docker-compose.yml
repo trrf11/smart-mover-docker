@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  smart-mover:
+    build: .
+    container_name: smart-mover
+    ports:
+      - "7878:7878"
+    volumes:
+      # App configuration and logs
+      - ./config:/config
+      # Cache drive (adjust path for your system)
+      # - /mnt/cache:/mnt/cache:rw
+      # Array destination (adjust path for your system)
+      # - /mnt/disk1:/mnt/disk1:rw
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    restart: unless-stopped

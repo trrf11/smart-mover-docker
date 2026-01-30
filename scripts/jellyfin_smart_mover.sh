@@ -262,8 +262,8 @@ move_single_file() {
             return 1
         fi
 
-        # Use rsync for safe transfer: preserves attributes, verifies transfer, only removes source on success
-        if rsync -a --remove-source-files "$source_path" "$target_path"; then
+        # Use rsync for safe transfer: preserves attributes (including xattrs), verifies transfer, only removes source on success
+        if rsync -aX --remove-source-files "$source_path" "$target_path"; then
             log_message "Successfully moved $file_type: $source_path"
             return 0
         else

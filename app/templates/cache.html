@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Cache Browser - Smart Mover{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Cache Browser</h1>
+    <p class="page-description">Browse files and folders on the cache drive</p>
+</div>
+
+<!-- Alert container -->
+<div id="alert-container"></div>
+
+<!-- Breadcrumb Navigation -->
+<nav id="cache-breadcrumb" class="breadcrumb">
+    <a href="#" class="breadcrumb-item" data-path="">Cache</a>
+</nav>
+
+<!-- Cache Contents -->
+<section class="section">
+    <div class="card">
+        <div id="cache-loading" class="empty-state">
+            <div class="spinner"></div>
+            <p class="mt-2 text-muted">Loading...</p>
+        </div>
+
+        <div id="cache-empty" class="empty-state hidden">
+            <div class="empty-state-icon">📁</div>
+            <p>This folder is empty</p>
+        </div>
+
+        <div id="cache-error" class="empty-state hidden">
+            <div class="empty-state-icon">⚠️</div>
+            <p id="cache-error-message">Unable to load directory</p>
+        </div>
+
+        <table id="cache-table" class="cache-table hidden">
+            <thead>
+                <tr>
+                    <th class="cache-col-name">Name</th>
+                    <th class="cache-col-size">Size</th>
+                    <th class="cache-col-items">Items</th>
+                </tr>
+            </thead>
+            <tbody id="cache-contents">
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

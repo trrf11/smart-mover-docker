@@ -848,3 +848,119 @@ main {
 body:has(.action-bar) main {
     padding-bottom: calc(var(--space-8) + 60px);
 }
+
+/* ===== Breadcrumb Navigation ===== */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-bottom: var(--space-5);
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+    color: var(--fg-secondary);
+    text-decoration: none;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s;
+}
+
+.breadcrumb-item:hover {
+    color: var(--fg);
+    background: var(--bg-elevated);
+}
+
+.breadcrumb-item.active {
+    color: var(--fg);
+    pointer-events: none;
+}
+
+.breadcrumb-separator {
+    color: var(--fg-muted);
+    font-size: 0.8rem;
+}
+
+/* ===== Cache Browser Table ===== */
+.cache-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cache-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fg-muted);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border);
+}
+
+.cache-table td {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.9rem;
+}
+
+.cache-table tr:last-child td {
+    border-bottom: none;
+}
+
+.cache-table tr:hover {
+    background: var(--bg-elevated);
+}
+
+.cache-col-name {
+    width: 60%;
+}
+
+.cache-col-size {
+    width: 120px;
+    text-align: right;
+}
+
+.cache-col-items {
+    width: 80px;
+    text-align: right;
+}
+
+.cache-table th.cache-col-size,
+.cache-table th.cache-col-items {
+    text-align: right;
+}
+
+.cache-table td.cache-col-size,
+.cache-table td.cache-col-items {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--fg-secondary);
+}
+
+.cache-item-name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.cache-item-icon {
+    font-size: 1rem;
+    opacity: 0.7;
+}
+
+.cache-item-link {
+    color: var(--fg);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cache-item-link:hover {
+    color: var(--accent);
+}
+
+.cache-item-file {
+    color: var(--fg-secondary);
+}

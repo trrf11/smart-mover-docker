@@ -19,6 +19,7 @@
             </div>
             <ul class="nav-links">
                 <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>
+                <li><a href="/cache" class="{% if request.path == '/cache' %}active{% endif %}">Cache</a></li>
                 <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">Settings</a></li>
                 <li><a href="/logs" class="{% if request.path == '/logs' %}active{% endif %}">Logs</a></li>
                 <li><a href="/help" class="{% if request.path == '/help' %}active{% endif %}">Help</a></li>

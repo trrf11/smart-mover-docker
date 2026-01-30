@@ -16,7 +16,7 @@ from app.config_manager import ConfigManager, Settings
 from app.runner import ScriptRunner
 
 # Version - update this when making changes
-APP_VERSION = "1.2.2"
+APP_VERSION = "1.3.0"
 
 # Initialize app
 app = FastAPI(
@@ -66,6 +66,18 @@ class LogsResponse(BaseModel):
     lines: int
 
 
+class CacheItem(BaseModel):
+    name: str
+    type: str  # "file" or "folder"
+    size_bytes: int
+    item_count: Optional[int] = None  # Only for folders
+
+
+class CacheContentsResponse(BaseModel):
+    path: str
+    items: list[CacheItem]
+
+
 # --- HTML Page Routes ---
 
 @app.get("/", response_class=HTMLResponse)
@@ -110,6 +122,15 @@ async def help_page(request: Request):
     })
 
 
+@app.get("/cache", response_class=HTMLResponse)
+async def cache_page(request: Request):
+    """Render cache browser page."""
+    return templates.TemplateResponse("cache.html", {
+        "request": request,
+        "version": APP_VERSION
+    })
+
+
 # --- API Endpoints ---
 
 @app.get("/api/cache-usage", response_model=CacheUsageResponse)
@@ -143,6 +164,88 @@ async def get_cache_usage():
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get cache usage: {str(e)}")
+
+
+@app.get("/api/cache-contents", response_model=CacheContentsResponse)
+async def get_cache_contents(path: str = ""):
+    """Get contents of cache directory with sizes.
+
+    Args:
+        path: Relative path within the cache drive (e.g., "media/movies-pool")
+
+    Returns:
+        List of items with name, type, size, and item count for folders
+    """
+    settings = config_manager.load()
+    cache_drive = settings.cache_drive
+
+    # Build full path, ensuring we stay within cache drive
+    if path:
+        # Normalize and validate path to prevent directory traversal
+        normalized = os.path.normpath(path)
+        if normalized.startswith('..') or normalized.startswith('/'):
+            raise HTTPException(status_code=400, detail="Invalid path")
+        full_path = os.path.join(cache_drive, normalized)
+    else:
+        full_path = cache_drive
+
+    # Verify path exists and is within cache drive
+    try:
+        real_path = os.path.realpath(full_path)
+        real_cache = os.path.realpath(cache_drive)
+        if not real_path.startswith(real_cache):
+            raise HTTPException(status_code=400, detail="Path outside cache drive")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid path")
+
+    if not os.path.exists(full_path):
+        raise HTTPException(status_code=404, detail="Path not found")
+
+    if not os.path.isdir(full_path):
+        raise HTTPException(status_code=400, detail="Path is not a directory")
+
+    items = []
+    try:
+        for entry in os.scandir(full_path):
+            try:
+                if entry.is_file(follow_symlinks=False):
+                    stat = entry.stat(follow_symlinks=False)
+                    items.append(CacheItem(
+                        name=entry.name,
+                        type="file",
+                        size_bytes=stat.st_size
+                    ))
+                elif entry.is_dir(follow_symlinks=False):
+                    # For folders, calculate size and item count
+                    folder_size = 0
+                    item_count = 0
+                    try:
+                        for root, dirs, files in os.walk(entry.path):
+                            item_count += len(files) + len(dirs)
+                            for f in files:
+                                try:
+                                    folder_size += os.path.getsize(os.path.join(root, f))
+                                except (OSError, IOError):
+                                    pass
+                    except (OSError, IOError):
+                        pass
+
+                    items.append(CacheItem(
+                        name=entry.name,
+                        type="folder",
+                        size_bytes=folder_size,
+                        item_count=item_count
+                    ))
+            except (OSError, IOError):
+                # Skip entries we can't read
+                continue
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    # Sort: folders first, then by name
+    items.sort(key=lambda x: (x.type != "folder", x.name.lower()))
+
+    return CacheContentsResponse(path=path or "/", items=items)
 
 
 @app.post("/api/run")

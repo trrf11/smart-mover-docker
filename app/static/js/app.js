@@ -25,6 +25,14 @@ function formatBytes(gb) {
     return gb.toFixed(1) + ' GB';
 }
 
+function formatSizeBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = bytes / Math.pow(1024, i);
+    return size.toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+}
+
 function formatDuration(seconds) {
     if (seconds < 60) {
         return seconds.toFixed(1) + 's';
@@ -603,6 +611,142 @@ async function clearLogs() {
 }
 
 // ============================================
+// Cache Browser Functions
+// ============================================
+
+let currentCachePath = '';
+
+async function loadCacheContents(path = '') {
+    const loading = document.getElementById('cache-loading');
+    const empty = document.getElementById('cache-empty');
+    const error = document.getElementById('cache-error');
+    const table = document.getElementById('cache-table');
+    const tbody = document.getElementById('cache-contents');
+
+    // Show loading state
+    if (loading) loading.classList.remove('hidden');
+    if (empty) empty.classList.add('hidden');
+    if (error) error.classList.add('hidden');
+    if (table) table.classList.add('hidden');
+
+    try {
+        const url = '/api/cache-contents' + (path ? `?path=${encodeURIComponent(path)}` : '');
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.detail || 'Failed to load directory');
+        }
+
+        const data = await response.json();
+        currentCachePath = path;
+
+        // Update breadcrumb
+        updateBreadcrumb(path);
+
+        // Hide loading
+        if (loading) loading.classList.add('hidden');
+
+        // Check if empty
+        if (data.items.length === 0) {
+            if (empty) empty.classList.remove('hidden');
+            return;
+        }
+
+        // Populate table
+        if (tbody) {
+            tbody.innerHTML = '';
+            for (const item of data.items) {
+                const row = document.createElement('tr');
+                const itemPath = path ? `${path}/${item.name}` : item.name;
+
+                if (item.type === 'folder') {
+                    row.innerHTML = `
+                        <td class="cache-col-name">
+                            <div class="cache-item-name">
+                                <span class="cache-item-icon">📁</span>
+                                <a class="cache-item-link" onclick="loadCacheContents('${itemPath.replace(/'/g, "\\'")}')">${escapeHtml(item.name)}</a>
+                            </div>
+                        </td>
+                        <td class="cache-col-size">${formatSizeBytes(item.size_bytes)}</td>
+                        <td class="cache-col-items">${item.item_count !== null ? item.item_count : '—'}</td>
+                    `;
+                } else {
+                    row.innerHTML = `
+                        <td class="cache-col-name">
+                            <div class="cache-item-name">
+                                <span class="cache-item-icon">📄</span>
+                                <span class="cache-item-file">${escapeHtml(item.name)}</span>
+                            </div>
+                        </td>
+                        <td class="cache-col-size">${formatSizeBytes(item.size_bytes)}</td>
+                        <td class="cache-col-items">—</td>
+                    `;
+                }
+                tbody.appendChild(row);
+            }
+        }
+
+        if (table) table.classList.remove('hidden');
+
+    } catch (err) {
+        if (loading) loading.classList.add('hidden');
+        if (error) {
+            const errorMsg = document.getElementById('cache-error-message');
+            if (errorMsg) errorMsg.textContent = err.message;
+            error.classList.remove('hidden');
+        }
+        console.error('Failed to load cache contents:', err);
+    }
+}
+
+function updateBreadcrumb(path) {
+    const breadcrumb = document.getElementById('cache-breadcrumb');
+    if (!breadcrumb) return;
+
+    breadcrumb.innerHTML = '';
+
+    // Root link
+    const rootLink = document.createElement('a');
+    rootLink.href = '#';
+    rootLink.className = 'breadcrumb-item' + (path === '' ? ' active' : '');
+    rootLink.textContent = 'Cache';
+    rootLink.onclick = (e) => { e.preventDefault(); loadCacheContents(''); };
+    breadcrumb.appendChild(rootLink);
+
+    if (path) {
+        const parts = path.split('/');
+        let currentPath = '';
+
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            currentPath = currentPath ? `${currentPath}/${part}` : part;
+
+            // Add separator
+            const separator = document.createElement('span');
+            separator.className = 'breadcrumb-separator';
+            separator.textContent = '/';
+            breadcrumb.appendChild(separator);
+
+            // Add path segment
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'breadcrumb-item' + (i === parts.length - 1 ? ' active' : '');
+            link.textContent = part;
+            const linkPath = currentPath;
+            link.onclick = (e) => { e.preventDefault(); loadCacheContents(linkPath); };
+            breadcrumb.appendChild(link);
+        }
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============================================
 // Page Initialization
 // ============================================
 
@@ -632,5 +776,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Logs page
     if (path === '/logs') {
         loadLogs();
+    }
+
+    // Cache browser page
+    if (path === '/cache') {
+        loadCacheContents();
     }
 });

@@ -226,7 +226,7 @@ extract_episode_pattern() {
     # Match S##E## pattern (case insensitive)
     if [[ "$filename" =~ [Ss]([0-9]{1,2})[Ee]([0-9]{1,2}) ]]; then
         # Return uppercase normalized format
-        printf "S%02dE%02d" "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+        printf "S%02dE%02d" "$((10#${BASH_REMATCH[1]}))" "$((10#${BASH_REMATCH[2]}))"
     fi
 }
 

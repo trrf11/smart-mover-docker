@@ -6,7 +6,7 @@ set -e
 # Set default values
 PUID=${PUID:-99}
 PGID=${PGID:-100}
-WEB_PORT=${WEB_PORT:-7878}
+WEB_PORT=${WEB_PORT:-9898}
 
 echo "Starting Smart Mover..."
 echo "PUID: $PUID"

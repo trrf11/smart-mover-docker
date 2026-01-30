@@ -3,6 +3,53 @@
 {% block title %}Logs - Smart Mover{% endblock %}
 
 {% block content %}
-<h1>Logs</h1>
-<!-- Log viewer will go here -->
+<div class="page-header">
+    <h1 class="page-title">Logs</h1>
+</div>
+
+<!-- Alert container for messages -->
+<div id="alert-container"></div>
+
+<section class="section">
+    <div class="log-controls">
+        <div class="log-filter">
+            <label for="log-level-filter" class="text-secondary" style="font-size: 0.85rem;">Filter:</label>
+            <select id="log-level-filter" class="form-select" style="width: auto; height: 32px;" onchange="loadLogs()">
+                <option value="">All</option>
+                <option value="INFO">INFO</option>
+                <option value="DEBUG">DEBUG</option>
+                <option value="ERROR">ERROR</option>
+            </select>
+        </div>
+
+        <label class="form-checkbox">
+            <input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()">
+            <span>Auto-refresh</span>
+        </label>
+
+        <button class="btn btn-sm btn-secondary" onclick="loadLogs()">
+            Refresh
+        </button>
+
+        <a href="/api/logs/download" class="btn btn-sm btn-ghost" download>
+            Download
+        </a>
+
+        <button class="btn btn-sm btn-danger" onclick="clearLogs()">
+            Clear
+        </button>
+    </div>
+
+    <div class="log-viewer" style="max-height: 600px;">
+        <button class="copy-btn" onclick="copyToClipboard('log-content')" title="Copy to clipboard">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+        </button>
+        <div id="log-content" class="log-content"></div>
+    </div>
+
+    <p id="log-line-count" class="text-muted mt-1" style="font-size: 0.8rem;">0 lines</p>
+</section>
 {% endblock %}

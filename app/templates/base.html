@@ -8,12 +8,15 @@
 </head>
 <body>
     <nav>
-        <div class="nav-brand">Smart Mover</div>
-        <ul class="nav-links">
-            <li><a href="/">Dashboard</a></li>
-            <li><a href="/settings">Settings</a></li>
-            <li><a href="/logs">Logs</a></li>
-        </ul>
+        <div class="nav-inner">
+            <div class="nav-brand">Smart<span>Mover</span> <span class="version">v{{ version }}</span></div>
+            <ul class="nav-links">
+                <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>
+                <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">Settings</a></li>
+                <li><a href="/logs" class="{% if request.path == '/logs' %}active{% endif %}">Logs</a></li>
+                <li><a href="/help" class="{% if request.path == '/help' %}active{% endif %}">Help</a></li>
+            </ul>
+        </div>
     </nav>
     <main>
         {% block content %}{% endblock %}

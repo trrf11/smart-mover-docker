@@ -3,6 +3,194 @@
 {% block title %}Settings - Smart Mover{% endblock %}
 
 {% block content %}
-<h1>Settings</h1>
-<!-- Configuration form will go here -->
+<div class="page-header">
+    <h1 class="page-title">Settings</h1>
+</div>
+
+<!-- Alert container for messages -->
+<div id="alert-container"></div>
+
+<form id="settings-form" onsubmit="saveSettings(event)">
+
+    <!-- Jellyfin Connection -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Jellyfin Connection</h2>
+        </div>
+
+        <div class="card">
+            <div class="form-group">
+                <label class="form-label" for="jellyfin_url">Server URL</label>
+                <input type="url" id="jellyfin_url" name="jellyfin_url" class="form-input"
+                       placeholder="http://192.168.1.60:8096" value="{{ settings.jellyfin_url }}" required>
+                <p class="form-hint">Your Jellyfin server address</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="jellyfin_api_key">API Key</label>
+                <input type="password" id="jellyfin_api_key" name="jellyfin_api_key" class="form-input"
+                       placeholder="{% if settings.jellyfin_api_key %}Key saved - leave blank to keep{% else %}Enter your API key{% endif %}">
+                {% if settings.jellyfin_api_key %}
+                <p class="form-hint text-success">API key saved. Leave blank to keep current key.</p>
+                {% else %}
+                <p class="form-hint">Generate in Jellyfin: Dashboard > API Keys > Add</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="jellyfin_user_ids">User IDs</label>
+                <input type="text" id="jellyfin_user_ids" name="jellyfin_user_ids" class="form-input"
+                       placeholder="user-uuid-1 user-uuid-2" value="{{ settings.jellyfin_user_ids }}">
+                <p class="form-hint">Space-separated Jellyfin user UUIDs</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Path Configuration -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Paths</h2>
+        </div>
+
+        <div class="card">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="cache_drive">Cache Drive</label>
+                    <input type="text" id="cache_drive" name="cache_drive" class="form-input"
+                           value="{{ settings.cache_drive }}" required>
+                    <p class="form-hint">Source path (e.g., /mnt/cache)</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="array_path">Array Destination</label>
+                    <input type="text" id="array_path" name="array_path" class="form-input"
+                           value="{{ settings.array_path }}" required>
+                    <p class="form-hint">Target path (e.g., /mnt/disk1)</p>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="movies_pool">Movies Pool</label>
+                    <input type="text" id="movies_pool" name="movies_pool" class="form-input"
+                           value="{{ settings.movies_pool }}" required>
+                    <p class="form-hint">Your movies share name</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="tv_pool">TV Pool</label>
+                    <input type="text" id="tv_pool" name="tv_pool" class="form-input"
+                           value="{{ settings.tv_pool }}" required>
+                    <p class="form-hint">Your TV shows share name</p>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <p class="text-secondary mb-2" style="font-size: 0.85rem;">Path Translation (Jellyfin container paths to local paths)</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="jellyfin_path_prefix">Jellyfin Prefix</label>
+                    <input type="text" id="jellyfin_path_prefix" name="jellyfin_path_prefix" class="form-input"
+                           value="{{ settings.jellyfin_path_prefix }}">
+                    <p class="form-hint">Path as seen by Jellyfin</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="local_path_prefix">Local Prefix</label>
+                    <input type="text" id="local_path_prefix" name="local_path_prefix" class="form-input"
+                           value="{{ settings.local_path_prefix }}">
+                    <p class="form-hint">Corresponding local path</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Behavior Settings -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Behavior</h2>
+        </div>
+
+        <div class="card">
+            <div class="form-group">
+                <label class="form-label" for="cache_threshold">Cache Threshold</label>
+                <div class="range-container">
+                    <input type="range" id="cache_threshold" name="cache_threshold" min="1" max="99"
+                           value="{{ settings.cache_threshold }}" oninput="updateThresholdDisplay(this.value)">
+                    <span class="range-value" id="threshold-display">{{ settings.cache_threshold }}%</span>
+                </div>
+                <p class="form-hint">Move files when cache usage exceeds this percentage</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="dry_run" name="dry_run" {% if settings.dry_run %}checked{% endif %}>
+                        <span>Dry Run Mode</span>
+                    </label>
+                    <p class="form-hint">Preview changes without moving files</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="debug" name="debug" {% if settings.debug %}checked{% endif %}>
+                        <span>Debug Mode</span>
+                    </label>
+                    <p class="form-hint">Enable verbose logging</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="log_level">Log Level</label>
+                <select id="log_level" name="log_level" class="form-select">
+                    <option value="INFO" {% if settings.log_level == 'INFO' %}selected{% endif %}>INFO</option>
+                    <option value="DEBUG" {% if settings.log_level == 'DEBUG' %}selected{% endif %}>DEBUG</option>
+                    <option value="ERROR" {% if settings.log_level == 'ERROR' %}selected{% endif %}>ERROR</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- Schedule Settings -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Schedule</h2>
+        </div>
+
+        <div class="card">
+            <div class="form-group">
+                <label class="form-checkbox">
+                    <input type="checkbox" id="schedule_enabled" name="schedule_enabled"
+                           {% if settings.schedule_enabled %}checked{% endif %}
+                           onchange="toggleScheduleOptions()">
+                    <span>Enable Scheduled Runs</span>
+                </label>
+            </div>
+
+            <div id="schedule-options" class="{% if not settings.schedule_enabled %}hidden{% endif %}">
+                <div class="form-group">
+                    <label class="form-label" for="schedule_cron">Cron Expression</label>
+                    <input type="text" id="schedule_cron" name="schedule_cron" class="form-input text-mono"
+                           value="{{ settings.schedule_cron }}" placeholder="0 */6 * * *">
+                    <p class="form-hint">
+                        Examples: <span class="text-mono">0 */6 * * *</span> (every 6h),
+                        <span class="text-mono">0 2 * * *</span> (daily 2am)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</form>
+
+<!-- Sticky Action Bar -->
+<div class="action-bar">
+    <div class="action-bar-inner">
+        <button type="submit" form="settings-form" id="save-btn" class="btn btn-primary">
+            Save Settings
+        </button>
+    </div>
+</div>
 {% endblock %}

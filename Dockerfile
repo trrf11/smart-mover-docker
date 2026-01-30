@@ -3,7 +3,7 @@
 
 FROM python:3.11-slim
 
-LABEL maintainer="trrf11"
+LABEL maintainer="timfokker"
 LABEL description="Smart Mover - Move watched media from cache to array based on Jellyfin playback"
 
 # Install system dependencies
@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rsync \
     jq \
     curl \
+    gcc \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -34,11 +36,11 @@ RUN mkdir -p /config/logs
 # Environment variables
 ENV PUID=99
 ENV PGID=100
-ENV WEB_PORT=7878
+ENV WEB_PORT=9898
 ENV TZ=America/New_York
 
 # Expose web UI port
-EXPOSE 7878
+EXPOSE 9898
 
 # Set entrypoint
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]

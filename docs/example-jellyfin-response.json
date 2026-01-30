@@ -1,0 +1,70 @@
+{
+    "description": "Example Jellyfin API response for a played movie item",
+    "endpoint": "/Users/{userId}/Items?searchTerm=Super%20Mario&Recursive=true&Fields=Path",
+    "item": {
+        "Name": "The Super Mario Bros. Movie",
+        "ServerId": "adc634fb13c84f25aeb6ac8d49005e44",
+        "Id": "cca43e643232a8ede8d81ef9703aa7cc",
+        "HasSubtitles": true,
+        "Container": "mkv",
+        "PremiereDate": "2023-04-05T00:00:00.0000000Z",
+        "CriticRating": 59,
+        "Path": "/media/media/movies-pool/The Super Mario Bros. Movie (2023)/The.Super.Mario.Bros.Movie.2023.1080p.BluRay.x264-PiGNUS[TGx].mkv",
+        "OfficialRating": "NL-6",
+        "ChannelId": null,
+        "CommunityRating": 7.597,
+        "RunTimeTicks": 55449600000,
+        "ProductionYear": 2023,
+        "IsFolder": false,
+        "Type": "Movie",
+        "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 10,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-01-28T20:53:03.3316273Z",
+            "Played": true,
+            "Key": "502356",
+            "ItemId": "00000000000000000000000000000000"
+        },
+        "VideoType": "VideoFile",
+        "ImageTags": {
+            "Primary": "4e4df4ef93a847b14eac6f542b2f69c1",
+            "Logo": "883ec77227dad3c1b328472fe3eae75a",
+            "Thumb": "d7721cc1b5d8f6b917f5ff02b0ebb272"
+        },
+        "BackdropImageTags": [
+            "d714d61a3ac0a24e51a0420d168dba69"
+        ],
+        "ImageBlurHashes": {
+            "Backdrop": {
+                "d714d61a3ac0a24e51a0420d168dba69": "WgIDnN_%tSXUrW%25YT0WGR*X4R*VqpIV@R+S$WA-Wrse-t6aeW="
+            },
+            "Primary": {
+                "4e4df4ef93a847b14eac6f542b2f69c1": "dUJF}={Nt9^km^n:XCn.0{b_j0Si^j=u$x%3MzNft8rw"
+            },
+            "Logo": {
+                "883ec77227dad3c1b328472fe3eae75a": "VKE{UvM902-:NB-.-5Mym[${J?O7R3xuoiRZKlW;KYIV"
+            },
+            "Thumb": {
+                "d7721cc1b5d8f6b917f5ff02b0ebb272": "WUJ~vf_.7O#9vltTEFsunPotxbRqH_b{ImO,TDRj}]#;bDRks9$~"
+            }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Video"
+    },
+    "notes": {
+        "path_mapping": {
+            "jellyfin_prefix": "/media/media",
+            "local_prefix": "/mnt/cache/media",
+            "translated_path": "/mnt/cache/media/movies-pool/The Super Mario Bros. Movie (2023)/The.Super.Mario.Bros.Movie.2023.1080p.BluRay.x264-PiGNUS[TGx].mkv"
+        },
+        "key_fields": {
+            "Played": "UserData.Played - true if fully watched",
+            "PlayCount": "UserData.PlayCount - number of times played",
+            "LastPlayedDate": "UserData.LastPlayedDate - last watch timestamp",
+            "Path": "Path - file location as seen by Jellyfin",
+            "Type": "Type - 'Movie' or 'Episode'",
+            "SeriesName": "SeriesName - only present for Episodes"
+        }
+    }
+}

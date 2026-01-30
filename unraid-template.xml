@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>SmartMover</Name>
-  <Repository>trrf11/smart-mover-docker</Repository>
-  <Registry>https://hub.docker.com/r/trrf11/smart-mover-docker</Registry>
+  <Repository>trrf/smart-mover</Repository>
+  <Registry>https://hub.docker.com/r/trrf/smart-mover</Registry>
   <Network>bridge</Network>
   <Shell>bash</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/trrf11/smart-mover-docker/issues</Support>
-  <Project>https://github.com/trrf11/smart-mover-docker</Project>
+  <Support>https://github.com/trrf/smart-mover-docker/issues</Support>
+  <Project>https://github.com/trrf/smart-mover-docker</Project>
   <Overview>
     Smart Mover - Intelligently move watched media from cache to array based on Jellyfin playback status.
 
@@ -19,9 +19,9 @@
     - Detailed logging
   </Overview>
   <Category>MediaApp:Video Tools:</Category>
-  <WebUI>http://[IP]:[PORT:7878]</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/trrf11/smart-mover-docker/main/unraid-template.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/trrf11/smart-mover-docker/main/icon.png</Icon>
+  <WebUI>http://[IP]:[PORT:9898]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/trrf/smart-mover-docker/main/unraid-template.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/trrf/smart-mover-docker/main/icon.png</Icon>
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
@@ -29,7 +29,7 @@
   <DonateText/>
   <DonateLink/>
   <Requires/>
-  <Config Name="Web UI Port" Target="7878" Default="7878" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">7878</Config>
+  <Config Name="Web UI Port" Target="9898" Default="9898" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">9898</Config>
   <Config Name="Config Path" Target="/config" Default="/mnt/user/appdata/smart-mover" Mode="rw" Description="Configuration and logs storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/smart-mover</Config>
   <Config Name="Cache Drive" Target="/mnt/cache" Default="/mnt/cache" Mode="rw" Description="Path to cache drive" Type="Path" Display="always" Required="true" Mask="false">/mnt/cache</Config>
   <Config Name="Array Destination" Target="/mnt/disk1" Default="/mnt/disk1" Mode="rw" Description="Destination path on array" Type="Path" Display="always" Required="true" Mask="false">/mnt/disk1</Config>

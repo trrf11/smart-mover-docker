@@ -5,7 +5,7 @@ services:
     build: .
     container_name: smart-mover
     ports:
-      - "7878:7878"
+      - "9898:9898"
     volumes:
       # App configuration and logs
       - ./config:/config

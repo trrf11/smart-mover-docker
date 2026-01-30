@@ -6,19 +6,22 @@
 #
 # Description: Moves media files from cache to array based on Jellyfin playback status
 # Author: Tim Fokker
+# Version: 1.1.0
 # Date: 2024-02-21
+
+SCRIPT_VERSION="1.2.0"
 #
 # Requirements:
 # - jq: Install through Community Applications -> NerdPack
 #   OR run: curl -L -o /usr/local/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && chmod +x /usr/local/bin/jq
 #
-# Variables:
-JELLYFIN_URL="http://localhost:8096"  # Change this to your Jellyfin server URL
-JELLYFIN_API_KEY=""                   # Your Jellyfin API key
-JELLYFIN_USER_IDS=""                  # Jellyfin user ID(s) - space-separated for multiple users
-CACHE_THRESHOLD=90                    # Percentage of cache usage that triggers moving files
-CACHE_DRIVE="/mnt/cache"
-DEBUG=true                            # Set to true to enable debug logging
+# Variables (can be overridden by environment variables):
+JELLYFIN_URL="${JELLYFIN_URL:-http://localhost:8096}"  # Change this to your Jellyfin server URL
+JELLYFIN_API_KEY="${JELLYFIN_API_KEY:-}"               # Your Jellyfin API key
+JELLYFIN_USER_IDS="${USER_IDS:-}"                      # Jellyfin user ID(s) - space-separated for multiple users
+CACHE_THRESHOLD="${CACHE_THRESHOLD:-90}"              # Percentage of cache usage that triggers moving files
+CACHE_DRIVE="${CACHE_DRIVE:-/mnt/cache}"
+DEBUG="${DEBUG:-true}"                                 # Set to true to enable debug logging
 
 #########################################
 ##       Media Pool Configuration      ##
@@ -28,8 +31,8 @@ DEBUG=true                            # Set to true to enable debug logging
 # are handled when moving (movies move entire folder, TV moves by episode).
 #
 # Set these to match your Unraid share names:
-MOVIES_POOL="movies-pool"             # Your movies share name (e.g., "movies", "films", "movies-pool")
-TV_POOL="tv-pool"                     # Your TV shows share name (e.g., "tv", "shows", "tv-pool")
+MOVIES_POOL="${MOVIES_POOL:-movies-pool}"   # Your movies share name (e.g., "movies", "films", "movies-pool")
+TV_POOL="${TV_POOL:-tv-pool}"               # Your TV shows share name (e.g., "tv", "shows", "tv-pool")
 
 #########################################
 ##       Path Mapping Configuration    ##
@@ -43,8 +46,8 @@ TV_POOL="tv-pool"                     # Your TV shows share name (e.g., "tv", "s
 #          Set: JELLYFIN_PATH_PREFIX="/media/media"
 #               LOCAL_PATH_PREFIX="/mnt/cache/media"
 #
-JELLYFIN_PATH_PREFIX="/media/media"   # Path prefix as seen by Jellyfin
-LOCAL_PATH_PREFIX="/mnt/cache/media"  # Corresponding path on Unraid
+JELLYFIN_PATH_PREFIX="${JELLYFIN_PATH_PREFIX:-/media/media}"   # Path prefix as seen by Jellyfin
+LOCAL_PATH_PREFIX="${LOCAL_PATH_PREFIX:-/mnt/cache/media}"    # Corresponding path on Unraid
 
 #########################################
 ##       ARRAY_PATH Configuration      ##
@@ -72,14 +75,14 @@ LOCAL_PATH_PREFIX="/mnt/cache/media"  # Corresponding path on Unraid
 #   - Files may be written back to cache, defeating the purpose
 #   - Only use if you understand the implications
 #
-ARRAY_PATH="/mnt/disk1"
+ARRAY_PATH="${ARRAY_PATH:-/mnt/disk1}"
 
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="$SCRIPT_DIR/jellyfin_smart_mover.log"
 
-# Dry-run mode flag
-DRY_RUN=false
+# Dry-run mode flag (can be set via environment variable)
+DRY_RUN="${DRY_RUN:-false}"
 
 # Subtitle file extensions
 SUBTITLE_EXTENSIONS="srt sub ass ssa vtt idx smi"
@@ -125,12 +128,15 @@ log_message() {
 }
 
 # Function to log to stderr (for use inside functions with redirected stdout)
+# Only logs if DEBUG=true
 log_stderr() {
-    local timestamp
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    local message="[$timestamp] $1"
-    echo "$message" >> "$LOG_FILE"
-    echo "$message" >&2
+    if [ "$DEBUG" = "true" ]; then
+        local timestamp
+        timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        local message="[$timestamp] $1"
+        echo "$message" >> "$LOG_FILE"
+        echo "$message" >&2
+    fi
 }
 
 # Initialize log file
@@ -141,13 +147,15 @@ initialize_logging() {
     fi
 
     # Add script start marker to log
-    log_message "=== Script started at $(date '+%Y-%m-%d %H:%M:%S') ==="
+    log_message "=== Smart Mover v$SCRIPT_VERSION started at $(date '+%Y-%m-%d %H:%M:%S') ==="
     log_message "Using log file: $LOG_FILE"
 }
 
-# Function to log debug messages
+# Function to log debug messages (only when DEBUG=true)
 debug_log() {
-    log_message "DEBUG: $1"
+    if [ "$DEBUG" = "true" ]; then
+        debug_log " $1"
+    fi
 }
 
 # Function to log error messages
@@ -226,7 +234,7 @@ move_single_file() {
 
     # Check if target already exists
     if [ -f "$target_path" ]; then
-        log_message "DEBUG: Target $file_type already exists: $target_path"
+        debug_log " Target $file_type already exists: $target_path"
         return 2  # Skip - already exists
     fi
 
@@ -274,7 +282,7 @@ cleanup_empty_dirs() {
                 dry_run_log "Would remove empty directory: $current_dir"
             else
                 if rmdir "$current_dir" 2>/dev/null; then
-                    log_message "DEBUG: Removed empty directory: $current_dir"
+                    debug_log " Removed empty directory: $current_dir"
                 else
                     # Directory not empty or permission denied, stop here
                     break
@@ -305,11 +313,11 @@ move_tv_subtitles() {
     episode_pattern=$(extract_episode_pattern "$video_filename")
 
     if [ -z "$episode_pattern" ]; then
-        log_message "DEBUG: No episode pattern found in $video_filename, skipping subtitle search"
+        debug_log " No episode pattern found in $video_filename, skipping subtitle search"
         return 0
     fi
 
-    log_message "DEBUG: Looking for subtitles matching pattern $episode_pattern in $video_dir"
+    debug_log " Looking for subtitles matching pattern $episode_pattern in $video_dir"
 
     local subtitle_count=0
 
@@ -333,7 +341,7 @@ move_tv_subtitles() {
         file_pattern=$(extract_episode_pattern "$filename")
 
         if [ "$file_pattern" = "$episode_pattern" ]; then
-            log_message "DEBUG: Found matching subtitle: $filename"
+            debug_log " Found matching subtitle: $filename"
 
             # Calculate target path
             local rel_path="${file#$CACHE_DRIVE/}"
@@ -354,9 +362,9 @@ move_tv_subtitles() {
         STATS_TV_SUBTITLES=$((STATS_TV_SUBTITLES + subtitle_count))
 
         if [ "$DRY_RUN" = true ]; then
-            log_message "DEBUG: Would move $subtitle_count subtitle file(s) for $episode_pattern"
+            debug_log " Would move $subtitle_count subtitle file(s) for $episode_pattern"
         else
-            log_message "DEBUG: Moved $subtitle_count subtitle file(s) for $episode_pattern"
+            debug_log " Moved $subtitle_count subtitle file(s) for $episode_pattern"
         fi
     fi
 
@@ -371,7 +379,7 @@ move_movie_folder() {
     local movie_dir
     movie_dir=$(dirname "$video_path")
 
-    log_message "DEBUG: Moving entire movie folder: $movie_dir"
+    debug_log " Moving entire movie folder: $movie_dir"
 
     local file_count=0
     local video_count=0
@@ -419,9 +427,9 @@ move_movie_folder() {
     done
 
     if [ "$DRY_RUN" = true ]; then
-        log_message "DEBUG: Would move $file_count file(s) from movie folder ($video_count video, $subtitle_count subtitles)"
+        debug_log " Would move $file_count file(s) from movie folder ($video_count video, $subtitle_count subtitles)"
     else
-        log_message "DEBUG: Moved $file_count file(s) from movie folder ($video_count video, $subtitle_count subtitles)"
+        debug_log " Moved $file_count file(s) from movie folder ($video_count video, $subtitle_count subtitles)"
     fi
 
     # Update global stats if we moved files
@@ -478,7 +486,7 @@ validate_api_key_format() {
         return 1
     fi
 
-    log_message "DEBUG: API key format validated successfully"
+    debug_log " API key format validated successfully"
     return 0
 }
 
@@ -527,20 +535,20 @@ validate_user_ids_format() {
     done
 
     if [ "$valid_count" -eq 1 ]; then
-        log_message "DEBUG: 1 user ID validated successfully"
+        debug_log " 1 user ID validated successfully"
     else
-        log_message "DEBUG: $valid_count user IDs validated successfully"
+        debug_log " $valid_count user IDs validated successfully"
     fi
     return 0
 }
 
 # Function to test API endpoints
 test_api_endpoints() {
-    log_message "DEBUG: Testing API connection..."
+    debug_log " Testing API connection..."
 
     # Test base URL
     local test_url="$JELLYFIN_URL/System/Info/Public"
-    log_message "DEBUG: Testing base URL: $test_url"
+    debug_log " Testing base URL: $test_url"
 
     local tmp_response
     tmp_response=$(mktemp)
@@ -569,7 +577,7 @@ test_api_endpoints() {
 
     # Test user endpoint
     local user_url="$JELLYFIN_URL/Users/$JELLYFIN_USER_ID"
-    log_message "DEBUG: Testing user endpoint: $user_url"
+    debug_log " Testing user endpoint: $user_url"
 
     if ! curl -s -f -o "$tmp_response" -D "$tmp_headers" \
         -H "X-MediaBrowser-Token: $JELLYFIN_API_KEY" \
@@ -591,7 +599,7 @@ test_api_endpoints() {
 
     # Test items endpoint with minimal query
     local items_url="$JELLYFIN_URL/Users/$JELLYFIN_USER_ID/Items?Limit=1"
-    log_message "DEBUG: Testing items endpoint: $items_url"
+    debug_log " Testing items endpoint: $items_url"
 
     if ! curl -s -f -o "$tmp_response" -D "$tmp_headers" \
         -H "X-MediaBrowser-Token: $JELLYFIN_API_KEY" \
@@ -605,12 +613,12 @@ test_api_endpoints() {
     # Validate JSON response
     if ! jq empty "$tmp_response" > /dev/null 2>&1; then
         log_message "ERROR: Invalid JSON response from items endpoint"
-        log_message "DEBUG: Raw response: $(cat "$tmp_response")"
+        debug_log " Raw response: $(cat "$tmp_response")"
         rm -f "$tmp_response" "$tmp_headers"
         return 1
     fi
 
-    log_message "DEBUG: All API endpoints tested successfully"
+    debug_log " All API endpoints tested successfully"
     rm -f "$tmp_response" "$tmp_headers"
     return 0
 }
@@ -654,10 +662,19 @@ make_api_call() {
     log_stderr "DEBUG: API response code for $description: $status_code"
     log_stderr "DEBUG: Curl headers: $(cat "$tmp_headers")"
 
-    # Log response body for debugging (truncated if too long)
-    local response_preview
-    response_preview=$(head -c 500 "$tmp_final")
-    log_stderr "DEBUG: First 500 chars of response: $response_preview"
+    # Log response size and preview for debugging
+    local response_size
+    response_size=$(wc -c < "$tmp_final")
+    log_stderr "DEBUG: Response size: $response_size bytes"
+
+    # Only show preview in debug, full response is passed through
+    if [ "$response_size" -lt 2000 ]; then
+        log_stderr "DEBUG: Full response: $(cat "$tmp_final")"
+    else
+        local response_preview
+        response_preview=$(head -c 1000 "$tmp_final")
+        log_stderr "DEBUG: First 1000 chars of response: $response_preview..."
+    fi
 
     if [ "$status_code" != "200" ]; then
         log_stderr "ERROR: API call failed for $description. Status code: $status_code"
@@ -670,6 +687,7 @@ make_api_call() {
 }
 
 # Function to get played items from Jellyfin for a single user
+# Outputs tab-separated: Name\tType\tPath
 get_played_items_for_user() {
     local user_id="$1"
 
@@ -678,76 +696,111 @@ get_played_items_for_user() {
     # Create temporary files
     local tmp_response
     tmp_response=$(mktemp)
-    local tmp_paths
-    tmp_paths=$(mktemp)
+    local tmp_items
+    tmp_items=$(mktemp)
     local tmp_error
     tmp_error=$(mktemp)
 
     # Get the API response
     local api_url="$JELLYFIN_URL/Users/$user_id/Items"
-    local query_params="IsPlayed=true&IncludeItemTypes=Movie,Episode&SortBy=LastPlayedDate&SortOrder=Descending&Recursive=true&Fields=Path"
+    local query_params="IsPlayed=true&IncludeItemTypes=Movie,Episode&SortBy=LastPlayedDate&SortOrder=Descending&Recursive=true&Fields=Path,SeriesName"
     local full_url="${api_url}?${query_params}"
 
     # Make the API call and save to temp file
+    log_stderr "DEBUG: Making API call to get played items..."
     if ! make_api_call "$full_url" "GET" "Getting played items for user $user_id" > "$tmp_response"; then
         log_stderr "ERROR: API call failed for user $user_id"
-        rm -f "$tmp_response" "$tmp_paths" "$tmp_error"
+        rm -f "$tmp_response" "$tmp_items" "$tmp_error"
         return 1
     fi
+    log_stderr "DEBUG: API call completed successfully"
 
     # Verify we got a response
+    local response_size
+    response_size=$(wc -c < "$tmp_response")
+    log_stderr "DEBUG: Response file size: $response_size bytes"
+
     if [ ! -s "$tmp_response" ]; then
         log_stderr "DEBUG: Empty response from API for user $user_id"
-        rm -f "$tmp_response" "$tmp_paths" "$tmp_error"
+        rm -f "$tmp_response" "$tmp_items" "$tmp_error"
         return 0
     fi
 
-    # Process the response with jq
-    local jq_cmd='.Items[] | select(.Path != null) | .Path'
-    if ! jq -r "$jq_cmd" "$tmp_response" > "$tmp_paths" 2> "$tmp_error"; then
+    # Log raw response item count for debugging
+    log_stderr "DEBUG: Parsing JSON response..."
+    local total_items
+    total_items=$(jq '.TotalRecordCount // 0' "$tmp_response" 2>/dev/null)
+    log_stderr "DEBUG: Jellyfin returned TotalRecordCount: $total_items for user $user_id"
+
+    # Also log the number of items in the Items array
+    local items_array_count
+    items_array_count=$(jq '.Items | length' "$tmp_response" 2>/dev/null)
+    log_stderr "DEBUG: Items array contains: $items_array_count items"
+
+    # Process the response with jq - extract Name, Type, SeriesName (for episodes), and Path
+    # Format: Name|Type|SeriesName|Path (using | as delimiter since names can have tabs)
+    log_stderr "DEBUG: Extracting item details with jq..."
+    local jq_cmd='.Items[] | select(.Path) | [.Name, .Type, (.SeriesName // ""), .Path] | join("|")'
+    if ! jq -r "$jq_cmd" "$tmp_response" > "$tmp_items" 2> "$tmp_error"; then
         log_stderr "ERROR: Failed to parse played items JSON for user $user_id"
         log_stderr "DEBUG: JQ Error: $(cat "$tmp_error")"
-        rm -f "$tmp_response" "$tmp_paths" "$tmp_error"
+        rm -f "$tmp_response" "$tmp_items" "$tmp_error"
         return 1
     fi
+    log_stderr "DEBUG: JQ extraction completed"
 
-    # Output the paths (if any)
-    if [ -s "$tmp_paths" ]; then
+    # Output the items (if any)
+    if [ -s "$tmp_items" ]; then
         local count
-        count=$(wc -l < "$tmp_paths")
-        log_stderr "DEBUG: Found $count played items for user $user_id"
-        cat "$tmp_paths"
+        count=$(wc -l < "$tmp_items")
+        log_stderr "DEBUG: Found $count played items with valid paths for user $user_id"
+
+        # Log first few items for debugging
+        log_stderr "DEBUG: First 5 items:"
+        head -5 "$tmp_items" | while IFS='|' read -r name type series path; do
+            if [ "$type" = "Episode" ] && [ -n "$series" ]; then
+                log_stderr "DEBUG:   - [TV] $series - $name"
+            else
+                log_stderr "DEBUG:   - [$type] $name"
+            fi
+        done
+
+        cat "$tmp_items"
+    else
+        log_stderr "DEBUG: No items with valid paths found for user $user_id"
     fi
 
-    rm -f "$tmp_response" "$tmp_paths" "$tmp_error"
+    rm -f "$tmp_response" "$tmp_items" "$tmp_error"
     return 0
 }
 
 # Function to get played items from Jellyfin (all configured users)
+# Outputs: Name|Type|SeriesName|Path (one per line, deduplicated by path)
 get_played_items() {
     log_stderr "DEBUG: Starting get_played_items function at $(date '+%Y-%m-%d %H:%M:%S')"
 
     # Create temporary file for combined results
-    local tmp_all_paths
-    tmp_all_paths=$(mktemp)
+    local tmp_all_items
+    tmp_all_items=$(mktemp)
 
     # Ensure temp file is cleaned up
-    trap 'rm -f "$tmp_all_paths"' EXIT
+    trap 'rm -f "$tmp_all_items"' EXIT
 
     local user_count=0
     for user_id in $JELLYFIN_USER_IDS; do
         user_count=$((user_count + 1))
-        get_played_items_for_user "$user_id" >> "$tmp_all_paths"
+        get_played_items_for_user "$user_id" >> "$tmp_all_items"
     done
 
     if [ "$user_count" -gt 1 ]; then
         log_stderr "DEBUG: Queried $user_count users for played items"
     fi
 
-    # Remove duplicates (same file watched by multiple users)
+    # Remove duplicates based on path (4th field) while keeping full item info
     local tmp_unique
     tmp_unique=$(mktemp)
-    sort -u "$tmp_all_paths" > "$tmp_unique"
+    # Sort by path (field 4), then keep only first occurrence of each path
+    sort -t'|' -k4,4 -u "$tmp_all_items" > "$tmp_unique"
 
     # Handle empty results
     if [ ! -s "$tmp_unique" ]; then
@@ -761,7 +814,7 @@ get_played_items() {
     total_count=$(wc -l < "$tmp_unique")
     log_stderr "DEBUG: Found $total_count unique played items across $user_count user(s)"
 
-    # Output the unique paths
+    # Output the unique items
     cat "$tmp_unique"
     rm -f "$tmp_unique"
     return 0
@@ -782,36 +835,36 @@ process_item() {
     local item_path
     item_path=$(translate_jellyfin_path "$jellyfin_path")
 
-    log_message "DEBUG: Processing item: $jellyfin_path"
-    log_message "DEBUG: Translated path: $item_path"
+    debug_log " Processing item: $jellyfin_path"
+    debug_log " Translated path: $item_path"
 
     # Check if file exists
     if [ ! -f "$item_path" ]; then
-        log_message "DEBUG: Skipping $item_path - file not found (not on cache)"
+        debug_log " Skipping $item_path - file not found (not on cache)"
         return 2  # Skip - file not on cache
     fi
 
     # Check if file is on cache drive
     if [[ "$item_path" != "$CACHE_DRIVE"* ]]; then
-        log_message "DEBUG: Skipping $item_path - not on cache drive"
+        debug_log " Skipping $item_path - not on cache drive"
         return 2  # Skip - not on cache
     fi
 
     # Detect media type and handle accordingly
     local media_type
     media_type=$(get_media_type "$item_path")
-    log_message "DEBUG: Detected media type: $media_type"
+    debug_log " Detected media type: $media_type"
 
     case "$media_type" in
         movie)
             # For movies, move the entire folder
-            log_message "DEBUG: Processing as movie - will move entire folder"
+            debug_log " Processing as movie - will move entire folder"
             move_movie_folder "$item_path"
             return $?
             ;;
         tv)
             # For TV, move the video file then find and move matching subtitles
-            log_message "DEBUG: Processing as TV episode - will move video and matching subtitles"
+            debug_log " Processing as TV episode - will move video and matching subtitles"
 
             # Get target path on array for the video
             local rel_path="${item_path#$CACHE_DRIVE/}"
@@ -821,7 +874,7 @@ process_item() {
 
             # Check if target already exists
             if [ -f "$array_path" ]; then
-                log_message "DEBUG: Target video already exists: $array_path"
+                debug_log " Target video already exists: $array_path"
                 # Still check for subtitles that might need moving
                 move_tv_subtitles "$item_path"
                 return 2  # Skip - already exists
@@ -854,7 +907,7 @@ process_item() {
             ;;
         *)
             # Unknown media type - use legacy behavior (just move the file)
-            log_message "DEBUG: Unknown media type - moving single file only"
+            debug_log " Unknown media type - moving single file only"
 
             local rel_path="${item_path#$CACHE_DRIVE/}"
             local array_path="$ARRAY_PATH/$rel_path"
@@ -863,7 +916,7 @@ process_item() {
 
             # Check if target already exists
             if [ -f "$array_path" ]; then
-                log_message "DEBUG: Target file already exists: $array_path"
+                debug_log " Target file already exists: $array_path"
                 return 2  # Skip - already exists
             fi
 
@@ -879,6 +932,36 @@ process_item() {
             return $move_result
             ;;
     esac
+}
+
+# Function to check if an item needs to be moved (is on cache and not already on array)
+# Returns 0 if item needs moving, 1 otherwise
+item_needs_moving() {
+    local jellyfin_path="$1"
+
+    # Translate Jellyfin path to local Unraid path
+    local item_path
+    item_path=$(translate_jellyfin_path "$jellyfin_path")
+
+    # Check if file exists on cache
+    if [ ! -f "$item_path" ]; then
+        return 1  # File not found (not on cache)
+    fi
+
+    # Check if file is on cache drive
+    if [[ "$item_path" != "$CACHE_DRIVE"* ]]; then
+        return 1  # Not on cache drive
+    fi
+
+    # Check if already exists on array
+    local rel_path="${item_path#$CACHE_DRIVE/}"
+    local array_path="$ARRAY_PATH/$rel_path"
+
+    if [ -f "$array_path" ]; then
+        return 1  # Already exists on array
+    fi
+
+    return 0  # Needs moving
 }
 
 # Function to process all played items
@@ -897,14 +980,18 @@ process_played_items() {
     STATS_SKIPPED=0
     STATS_ERRORS=0
 
-    log_message "DEBUG: Processing played items with cache usage at $cache_usage%"
+    debug_log "Processing played items with cache usage at $cache_usage%"
 
-    # Create temporary file for played items
+    # Create temporary files for played items
     local tmp_items
     tmp_items=$(mktemp)
+    local tmp_to_move
+    tmp_to_move=$(mktemp)
 
-    # Ensure temp file is cleaned up
-    trap 'rm -f "$tmp_items"' EXIT
+    # Ensure temp files are cleaned up
+    trap 'rm -f "$tmp_items" "$tmp_to_move"' EXIT
+
+    log_message "Fetching played items from Jellyfin..."
 
     # Get list of played items and save to temp file
     if ! get_played_items > "$tmp_items"; then
@@ -914,19 +1001,79 @@ process_played_items() {
 
     # If no items found, exit successfully
     if [ ! -s "$tmp_items" ]; then
-        log_message "DEBUG: No items to process"
+        log_message "No played items found in Jellyfin"
         return 0
     fi
 
-    # Process each item from the file
-    while IFS= read -r path; do
+    # Count total items from Jellyfin
+    local total_jellyfin
+    total_jellyfin=$(wc -l < "$tmp_items")
+
+    log_message "Scanning $total_jellyfin played items for files on cache..."
+
+    # Pre-scan: filter to only items that need moving
+
+    while IFS='|' read -r name type series_name path; do
         # Skip empty lines and debug/error messages
         if [ -z "$path" ] || [[ "$path" == *"DEBUG:"* ]] || [[ "$path" == *"ERROR:"* ]]; then
             continue
         fi
 
+        if item_needs_moving "$path"; then
+            echo "$name|$type|$series_name|$path" >> "$tmp_to_move"
+        fi
+    done < "$tmp_items"
+
+    # Check if any items need moving
+    if [ ! -s "$tmp_to_move" ]; then
+        log_message "========================================="
+        log_message "No items need moving"
+        log_message "========================================="
+        log_message "  Checked $total_jellyfin played items from Jellyfin"
+        log_message "  All items are either already on array or not on cache"
+        return 0
+    fi
+
+    # Count items to move
+    local total_to_move
+    total_to_move=$(wc -l < "$tmp_to_move")
+
+    # Display list of items that WILL be moved
+    log_message "========================================="
+    log_message "Items to move ($total_to_move of $total_jellyfin played):"
+    log_message "========================================="
+
+    local item_num=0
+    while IFS='|' read -r name type series_name path; do
+        item_num=$((item_num + 1))
+
+        # Format display based on type
+        if [ "$type" = "Episode" ] && [ -n "$series_name" ]; then
+            log_message "  $item_num. [TV] $series_name - $name"
+        elif [ "$type" = "Movie" ]; then
+            log_message "  $item_num. [Movie] $name"
+        else
+            log_message "  $item_num. [$type] $name"
+        fi
+
+        # Show translated local path
+        local local_path
+        local_path=$(translate_jellyfin_path "$path")
+        log_message "      Cache: $local_path"
+    done < "$tmp_to_move"
+
+    log_message "========================================="
+
+    # Process each item that needs moving
+    while IFS='|' read -r name type series_name path; do
         count=$((count + 1))
-        log_message "DEBUG: Processing item $count: $path"
+
+        # Show progress for each item
+        if [ "$DRY_RUN" = true ]; then
+            log_message "[$count/$total_to_move] Would move: $name"
+        else
+            log_message "[$count/$total_to_move] Moving: $name"
+        fi
 
         local result
         process_item "$path" "$cache_usage"
@@ -936,7 +1083,7 @@ process_played_items() {
         if [ "$result" -eq 2 ]; then
             skipped=$((skipped + 1))
         fi
-    done < "$tmp_items"
+    done < "$tmp_to_move"
 
     # Calculate totals
     local total_moved=$((STATS_MOVIES_COUNT + STATS_TV_COUNT))
@@ -999,23 +1146,18 @@ process_played_items() {
 
 # Function to validate environment
 validate_environment() {
-    set -e  # Exit on error
-    trap 'log_message "ERROR: An error occurred in validate_environment at line $LINENO"' ERR
-
-    log_message "DEBUG: Validating environment..."
+    debug_log "Validating environment..."
 
     # Check required environment variables
     if [ -z "$JELLYFIN_URL" ]; then
         log_message "ERROR: JELLYFIN_URL is not set"
         return 1
     fi
-    log_message "DEBUG: JELLYFIN_URL is set to: $JELLYFIN_URL"
 
     # Validate API key format before attempting any API calls
     if ! validate_api_key_format "$JELLYFIN_API_KEY"; then
         return 1
     fi
-    log_message "DEBUG: JELLYFIN_API_KEY format is valid (value hidden)"
 
     # Validate User ID(s) format before attempting any API calls
     if ! validate_user_ids_format; then
@@ -1023,37 +1165,33 @@ validate_environment() {
     fi
 
     # Test Jellyfin connection
-    log_message "DEBUG: Testing Jellyfin connection..."
+    log_message "Connecting to Jellyfin at $JELLYFIN_URL..."
     local test_response
     test_response=$(make_api_call "$JELLYFIN_URL/System/Info" "GET" "System Info")
     if [ $? -ne 0 ]; then
         log_message "ERROR: Failed to connect to Jellyfin server"
         return 1
     fi
-    log_message "DEBUG: System Info response: $test_response"
+
+    # Extract server name for logging
+    local server_name
+    server_name=$(echo "$test_response" | jq -r '.ServerName // "unknown"' 2>/dev/null)
+    log_message "Connected to Jellyfin server: $server_name"
 
     # Validate each user ID exists
-    log_message "DEBUG: Validating user ID(s)..."
     for user_id in $JELLYFIN_USER_IDS; do
         local user_test
         user_test=$(make_api_call "$JELLYFIN_URL/Users/$user_id" "GET" "User Info for $user_id")
-        if [ $? -ne 0 ]; then
+        local api_result=$?
+        if [ $api_result -ne 0 ]; then
             log_message "ERROR: Invalid user ID: $user_id"
             return 1
         fi
         # Extract username from response for logging
         local username
         username=$(echo "$user_test" | jq -r '.Name // "unknown"' 2>/dev/null)
-        log_message "DEBUG: Validated user: $username"
+        log_message "Monitoring played items for user: $username"
     done
-
-    log_message "DEBUG: Successfully connected to Jellyfin server"
-
-    # Log environment settings
-    log_message "DEBUG: Environment settings:"
-    log_message "DEBUG: - CACHE_DRIVE=$CACHE_DRIVE"
-    log_message "DEBUG: - ARRAY_PATH=$ARRAY_PATH"
-    log_message "DEBUG: - CACHE_THRESHOLD=$CACHE_THRESHOLD"
 
     return 0
 }
@@ -1135,12 +1273,6 @@ main() {
         exit 1
     fi
 
-    # Debug: Print environment variables
-    log_message "DEBUG: Environment settings:"
-    log_message "DEBUG: - CACHE_DRIVE=$CACHE_DRIVE"
-    log_message "DEBUG: - ARRAY_PATH=$ARRAY_PATH"
-    log_message "DEBUG: - CACHE_THRESHOLD=$CACHE_THRESHOLD"
-
     # Validate required paths
     if [ ! -d "$CACHE_DRIVE" ]; then
         log_message "ERROR: Cache drive path does not exist: $CACHE_DRIVE"
@@ -1154,24 +1286,21 @@ main() {
 
     # Check if mover is running
     if is_mover_running; then
-        log_message "Mover is currently running, exiting"
+        log_message "Unraid mover is currently running, skipping"
         exit 0
     fi
 
     # Check cache usage
-    log_message "DEBUG: Checking cache usage for $CACHE_DRIVE"
     local cache_usage
     cache_usage=$(check_cache_usage "$CACHE_DRIVE")
     if [ $? -ne 0 ]; then
         log_message "ERROR: Failed to check cache usage"
         exit 1
     fi
-    log_message "DEBUG: Cache usage is ${cache_usage}%"
-    log_message "Current cache usage: ${cache_usage}%"
+    log_message "Cache: ${cache_usage}% used (threshold: ${CACHE_THRESHOLD}%)"
 
     # Only process if cache usage is above threshold
     if [ "$cache_usage" -ge "$CACHE_THRESHOLD" ]; then
-        log_message "Cache usage (${cache_usage}%) is above threshold (${CACHE_THRESHOLD}%), processing played items"
         if ! process_played_items "$cache_usage"; then
             log_message "ERROR: Failed to process played items"
             exit 1

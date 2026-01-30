@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Help - Smart Mover{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Help</h1>
+</div>
+
+<!-- Quick Links -->
+<section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Resources</h2>
+    </div>
+
+    <div class="stats-row">
+        <a href="https://github.com/timfokker/smart-mover-docker" target="_blank" class="stat" style="text-decoration: none;">
+            <div class="stat-value">GitHub</div>
+            <div class="stat-label">Source code & issues</div>
+        </a>
+        <a href="https://forums.unraid.net/topic/XXXXX-smart-mover/" target="_blank" class="stat" style="text-decoration: none;">
+            <div class="stat-value">Support</div>
+            <div class="stat-label">Unraid forum thread</div>
+        </a>
+        <a href="https://github.com/timfokker/smart-mover-docker/issues/new" target="_blank" class="stat" style="text-decoration: none;">
+            <div class="stat-value">Report Bug</div>
+            <div class="stat-label">Open an issue</div>
+        </a>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Frequently Asked Questions</h2>
+    </div>
+
+    <div class="card">
+        <div class="faq-item">
+            <h3 class="faq-question">What does Smart Mover do?</h3>
+            <p class="faq-answer">
+                Smart Mover automatically moves watched media from your Unraid cache drive to the array.
+                It queries Jellyfin to identify content that has been fully watched, then moves those files
+                to free up cache space while keeping unwatched content fast on the cache.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="faq-item">
+            <h3 class="faq-question">How do I find my Jellyfin User ID?</h3>
+            <p class="faq-answer">
+                There are several ways to find your User ID:
+            </p>
+            <ul class="faq-list">
+                <li><strong>Method 1:</strong> Go to Jellyfin Dashboard > Users > Click a user. The URL will contain the User ID.</li>
+                <li><strong>Method 2:</strong> Use the Jellyfin API: <code class="text-mono">/Users</code> endpoint returns all users with their IDs.</li>
+                <li><strong>Method 3:</strong> Check browser dev tools while logged into Jellyfin - the User ID appears in API requests.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="faq-item">
+            <h3 class="faq-question">How do I create a Jellyfin API Key?</h3>
+            <p class="faq-answer">
+                Go to Jellyfin Dashboard > API Keys > Add. Give it a name like "Smart Mover" and copy the generated key.
+                This key allows Smart Mover to query playback status without needing your password.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="faq-item">
+            <h3 class="faq-question">What is Dry Run mode?</h3>
+            <p class="faq-answer">
+                Dry Run mode simulates the move operation without actually moving any files.
+                It's recommended to run in Dry Run mode first to verify which files would be moved.
+                Check the logs to see what would happen, then disable Dry Run when you're ready for real moves.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="faq-item">
+            <h3 class="faq-question">What are the path translation settings for?</h3>
+            <p class="faq-answer">
+                If Jellyfin runs in a Docker container, it may see your media at a different path than Smart Mover does.
+                Path translation converts Jellyfin's paths to your local Unraid paths. For example:
+            </p>
+            <ul class="faq-list">
+                <li><strong>Jellyfin sees:</strong> <code class="text-mono">/media/movies/Film.mkv</code></li>
+                <li><strong>Unraid path:</strong> <code class="text-mono">/mnt/cache/media/movies/Film.mkv</code></li>
+                <li><strong>Set Jellyfin Prefix:</strong> <code class="text-mono">/media</code></li>
+                <li><strong>Set Local Prefix:</strong> <code class="text-mono">/mnt/cache/media</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="faq-item">
+            <h3 class="faq-question">How does the cache threshold work?</h3>
+            <p class="faq-answer">
+                Smart Mover only moves files when your cache usage exceeds the threshold percentage.
+                For example, with a 90% threshold, no files are moved until the cache is more than 90% full.
+                This prevents unnecessary moves when you have plenty of cache space.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="faq-item">
+            <h3 class="faq-question">Can I schedule automatic runs?</h3>
+            <p class="faq-answer">
+                Yes! Enable scheduled runs in Settings and provide a cron expression. Common examples:
+            </p>
+            <ul class="faq-list">
+                <li><code class="text-mono">0 */6 * * *</code> - Every 6 hours</li>
+                <li><code class="text-mono">0 2 * * *</code> - Daily at 2 AM</li>
+                <li><code class="text-mono">0 3 * * 0</code> - Weekly on Sunday at 3 AM</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="faq-item">
+            <h3 class="faq-question">My files aren't being moved. What should I check?</h3>
+            <p class="faq-answer">
+                Common issues to check:
+            </p>
+            <ul class="faq-list">
+                <li>Verify Dry Run mode is disabled for actual moves</li>
+                <li>Check that cache usage exceeds your threshold</li>
+                <li>Confirm the Jellyfin API key and User IDs are correct</li>
+                <li>Verify path translation settings match your setup</li>
+                <li>Check the Logs page for error messages</li>
+                <li>Ensure the content is marked as "played" in Jellyfin (not just partially watched)</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- Version Info -->
+<section class="section">
+    <p class="text-muted" style="text-align: center; font-size: 0.85rem;">
+        Smart Mover v1.0.0
+    </p>
+</section>
+{% endblock %}

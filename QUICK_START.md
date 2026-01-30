@@ -31,7 +31,7 @@ gh auth login  # Follow prompts to authenticate
 gh repo create smart-mover-docker --public --description "Docker-based Smart Mover for Unraid with Web UI"
 
 # 4. Clone the empty repository
-git clone https://github.com/trrf/smart-mover-docker.git
+git clone https://github.com/trrf11/smart-mover-docker.git
 cd smart-mover-docker
 
 # 5. Create directory structure
@@ -348,7 +348,7 @@ docker pull trrf/smart-mover:dev
 
 - **Main prompt**: `CLAUDE_CODE_PROMPT.md`
 - **Tasks**: `NOTION_TASKS.csv`
-- **Existing repo**: https://github.com/trrf/unraid-smart-mover
+- **Existing repo**: https://github.com/trrf11/unraid-smart-mover
 - **Unraid forums**: https://forums.unraid.net/
 - **FastAPI docs**: https://fastapi.tiangolo.com/
 

@@ -208,7 +208,7 @@ Translated to:    /mnt/cache/media/movies/The Matrix (1999)/movie.mkv
 
 ```bash
 # Clone repository
-git clone https://github.com/trrf/smart-mover-docker.git
+git clone https://github.com/trrf11/smart-mover-docker.git
 cd smart-mover-docker
 
 # Create virtual environment
@@ -266,4 +266,4 @@ MIT License
 
 ## Credits
 
-Based on the [unraid-smart-mover](https://github.com/trrf/unraid-smart-mover) bash script.
+Based on the [unraid-smart-mover](https://github.com/trrf11/unraid-smart-mover) bash script.

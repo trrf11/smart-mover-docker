@@ -6,8 +6,8 @@
   <Network>bridge</Network>
   <Shell>bash</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/trrf/smart-mover-docker/issues</Support>
-  <Project>https://github.com/trrf/smart-mover-docker</Project>
+  <Support>https://github.com/trrf11/smart-mover-docker/issues</Support>
+  <Project>https://github.com/trrf11/smart-mover-docker</Project>
   <Overview>
     Smart Mover - Intelligently move watched media from cache to array based on Jellyfin playback status.
 

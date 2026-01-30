@@ -5,6 +5,8 @@ name: Docker Build
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -29,7 +31,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: trrf11/smart-mover-docker
+          images: trrf/smart-mover
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

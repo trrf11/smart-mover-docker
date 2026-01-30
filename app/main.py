@@ -16,7 +16,7 @@ from app.config_manager import ConfigManager, Settings
 from app.runner import ScriptRunner
 
 # Version - update this when making changes
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 
 # Initialize app
 app = FastAPI(

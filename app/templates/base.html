@@ -13,6 +13,9 @@
             <div class="nav-brand">
                 <img src="/static/images/logo-48.png" alt="Smart Mover" class="nav-logo">
                 Smart<span>Mover</span> <span class="version">v{{ version }}</span>
+                <span id="global-run-status" class="nav-run-status hidden">
+                    <span class="spinner-small"></span> Running...
+                </span>
             </div>
             <ul class="nav-links">
                 <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>

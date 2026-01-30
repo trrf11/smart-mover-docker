@@ -249,11 +249,52 @@ async function loadCacheUsage() {
     }
 }
 
+// Global status polling interval
+let globalStatusInterval = null;
+
+// Update global nav indicator (works on all pages)
+function updateGlobalRunStatus(isRunning) {
+    const globalStatus = document.getElementById('global-run-status');
+    if (globalStatus) {
+        if (isRunning) {
+            globalStatus.classList.remove('hidden');
+            // Start polling if not already
+            if (!globalStatusInterval) {
+                globalStatusInterval = setInterval(checkGlobalRunStatus, 2000);
+            }
+        } else {
+            globalStatus.classList.add('hidden');
+            // Stop polling
+            if (globalStatusInterval) {
+                clearInterval(globalStatusInterval);
+                globalStatusInterval = null;
+            }
+        }
+    }
+}
+
+// Check status globally (called on all pages)
+async function checkGlobalRunStatus() {
+    try {
+        const response = await fetch('/api/run/status');
+        const data = await response.json();
+        updateGlobalRunStatus(data.is_running);
+        return data;
+    } catch (error) {
+        console.error('Failed to check run status:', error);
+        return null;
+    }
+}
+
 async function loadRunStatus() {
     try {
         const response = await fetch('/api/run/status');
         const data = await response.json();
 
+        // Update global nav indicator
+        updateGlobalRunStatus(data.is_running);
+
+        // Update dashboard-specific elements
         const runStatus = document.getElementById('run-status');
         const runBtn = document.getElementById('run-btn');
 
@@ -307,6 +348,7 @@ async function runScript() {
     if (runStatus) runStatus.classList.remove('hidden');
     if (outputContainer) outputContainer.classList.remove('hidden');
     if (outputBox) outputBox.textContent = 'Running script...\n';
+    updateGlobalRunStatus(true);
 
     try {
         const response = await fetch('/api/run', {
@@ -343,6 +385,7 @@ async function runScript() {
     } finally {
         if (runBtn) runBtn.disabled = false;
         if (runStatus) runStatus.classList.add('hidden');
+        updateGlobalRunStatus(false);
     }
 }
 
@@ -521,6 +564,9 @@ document.addEventListener('DOMContentLoaded', function() {
             link.classList.add('active');
         }
     });
+
+    // Global: Check run status on ALL pages (shows indicator in nav)
+    checkGlobalRunStatus();
 
     // Dashboard page
     if (path === '/' || path === '/dashboard') {

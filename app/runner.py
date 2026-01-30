@@ -86,9 +86,18 @@ class ScriptRunner:
 
         # Log file for persistent output
         log_file = self.config.get_log_file()
+        log_file_lock = threading.Lock()
 
         output_lines = []
         error_lines = []
+
+        # Open log file and write header immediately
+        mode = "DRY RUN" if actual_dry_run else "LIVE"
+        log_handle = open(log_file, 'a')
+        log_handle.write(f"\n{'='*60}\n")
+        log_handle.write(f"[{start_time.isoformat()}] Smart Mover Run ({mode}) - RUNNING\n")
+        log_handle.write(f"{'='*60}\n\n")
+        log_handle.flush()
 
         try:
             # Check if script exists
@@ -104,11 +113,15 @@ class ScriptRunner:
                 bufsize=1
             )
 
-            # Read output in real-time
+            # Read output in real-time and stream to log file
             def read_stream(stream, lines_list, is_error=False):
                 for line in iter(stream.readline, ''):
                     lines_list.append(line)
                     self.state.current_output += line
+                    # Write to log file immediately
+                    with log_file_lock:
+                        log_handle.write(line)
+                        log_handle.flush()
                     if on_output:
                         on_output(line)
                 stream.close()
@@ -128,10 +141,12 @@ class ScriptRunner:
 
         except FileNotFoundError as e:
             error_lines.append(str(e))
+            log_handle.write(f"ERROR: {e}\n")
             return_code = -1
             success = False
         except Exception as e:
             error_lines.append(f"Unexpected error: {str(e)}")
+            log_handle.write(f"ERROR: Unexpected error: {str(e)}\n")
             return_code = -1
             success = False
 
@@ -139,8 +154,15 @@ class ScriptRunner:
         output = ''.join(output_lines)
         error = ''.join(error_lines)
 
-        # Write to log file
-        self._write_log(log_file, output, error, start_time, end_time, actual_dry_run, success)
+        # Write footer to log file
+        status = "SUCCESS" if success else "FAILED"
+        duration = (end_time - start_time).total_seconds()
+        if error and success:  # Has stderr but didn't fail
+            log_handle.write(f"\n--- STDERR ---\n{error}")
+        log_handle.write(f"\n{'='*60}\n")
+        log_handle.write(f"Completed: {status} in {duration:.1f} seconds\n")
+        log_handle.write(f"{'='*60}\n")
+        log_handle.close()
 
         result = RunResult(
             success=success,
@@ -158,30 +180,6 @@ class ScriptRunner:
             self.state.current_output = ""
 
         return result
-
-    def _write_log(self, log_file: Path, output: str, error: str,
-                   start_time: datetime, end_time: datetime,
-                   dry_run: bool, success: bool) -> None:
-        """Append run results to log file."""
-        mode = "DRY RUN" if dry_run else "LIVE"
-        status = "SUCCESS" if success else "FAILED"
-        duration = (end_time - start_time).total_seconds()
-
-        log_entry = f"""
-{'='*60}
-[{start_time.isoformat()}] Smart Mover Run ({mode}) - {status}
-Duration: {duration:.1f} seconds
-{'='*60}
-
-{output}
-"""
-        if error:
-            log_entry += f"\n--- ERRORS ---\n{error}\n"
-
-        log_entry += f"\n{'='*60}\n"
-
-        with open(log_file, 'a') as f:
-            f.write(log_entry)
 
     def get_status(self) -> dict:
         """Get current runner status."""

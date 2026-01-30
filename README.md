@@ -5,6 +5,7 @@ A Docker-based web application for Unraid that intelligently moves watched media
 ## Features
 
 - **Web UI Dashboard**: Live cache usage display with threshold alerts and next scheduled run time
+- **Cache Browser**: Browse cache drive contents with sortable columns (name, size, items)
 - **Settings Management**: Configure all options via web interface
 - **Manual & Scheduled Runs**: On-demand execution with cron-based scheduling
 - **Smart Move Logic**:

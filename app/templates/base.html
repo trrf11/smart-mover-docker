@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Smart Mover{% endblock %}</title>
+    <link rel="icon" type="image/png" href="/static/images/favicon.png">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <nav>
         <div class="nav-inner">
-            <div class="nav-brand">Smart<span>Mover</span> <span class="version">v{{ version }}</span></div>
+            <div class="nav-brand">
+                <img src="/static/images/logo-48.png" alt="Smart Mover" class="nav-logo">
+                Smart<span>Mover</span> <span class="version">v{{ version }}</span>
+            </div>
             <ul class="nav-links">
                 <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>
                 <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">Settings</a></li>

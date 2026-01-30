@@ -615,6 +615,9 @@ async function clearLogs() {
 // ============================================
 
 let currentCachePath = '';
+let cachedItems = [];
+let cacheSortColumn = 'size';
+let cacheSortAsc = false; // false = descending (largest first)
 
 async function loadCacheContents(path = '') {
     const loading = document.getElementById('cache-loading');
@@ -653,41 +656,16 @@ async function loadCacheContents(path = '') {
             return;
         }
 
-        // Populate table
-        if (tbody) {
-            tbody.innerHTML = '';
-            for (const item of data.items) {
-                const row = document.createElement('tr');
-                const itemPath = path ? `${path}/${item.name}` : item.name;
+        // Store items for sorting
+        cachedItems = data.items;
 
-                if (item.type === 'folder') {
-                    row.innerHTML = `
-                        <td class="cache-col-name">
-                            <div class="cache-item-name">
-                                <span class="cache-item-icon">📁</span>
-                                <a class="cache-item-link" onclick="loadCacheContents('${itemPath.replace(/'/g, "\\'")}')">${escapeHtml(item.name)}</a>
-                            </div>
-                        </td>
-                        <td class="cache-col-size">${formatSizeBytes(item.size_bytes)}</td>
-                        <td class="cache-col-items">${item.item_count !== null ? item.item_count : '—'}</td>
-                    `;
-                } else {
-                    row.innerHTML = `
-                        <td class="cache-col-name">
-                            <div class="cache-item-name">
-                                <span class="cache-item-icon">📄</span>
-                                <span class="cache-item-file">${escapeHtml(item.name)}</span>
-                            </div>
-                        </td>
-                        <td class="cache-col-size">${formatSizeBytes(item.size_bytes)}</td>
-                        <td class="cache-col-items">—</td>
-                    `;
-                }
-                tbody.appendChild(row);
-            }
-        }
+        // Render sorted items
+        renderCacheItems(path);
 
         if (table) table.classList.remove('hidden');
+
+        // Set up sort header click handlers (only once)
+        setupCacheSortHandlers();
 
     } catch (err) {
         if (loading) loading.classList.add('hidden');
@@ -744,6 +722,110 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function sortCacheItems(items) {
+    return [...items].sort((a, b) => {
+        let comparison = 0;
+
+        switch (cacheSortColumn) {
+            case 'name':
+                comparison = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+                break;
+            case 'size':
+                comparison = a.size_bytes - b.size_bytes;
+                break;
+            case 'items':
+                // Treat null/files as -1 so they sort to the end
+                const aItems = a.item_count !== null ? a.item_count : -1;
+                const bItems = b.item_count !== null ? b.item_count : -1;
+                comparison = aItems - bItems;
+                break;
+        }
+
+        return cacheSortAsc ? comparison : -comparison;
+    });
+}
+
+function renderCacheItems(path) {
+    const tbody = document.getElementById('cache-contents');
+    if (!tbody) return;
+
+    const sortedItems = sortCacheItems(cachedItems);
+
+    tbody.innerHTML = '';
+    for (const item of sortedItems) {
+        const row = document.createElement('tr');
+        const itemPath = path ? `${path}/${item.name}` : item.name;
+
+        if (item.type === 'folder') {
+            row.innerHTML = `
+                <td class="cache-col-name">
+                    <div class="cache-item-name">
+                        <span class="cache-item-icon">📁</span>
+                        <a class="cache-item-link" onclick="loadCacheContents('${itemPath.replace(/'/g, "\\'")}')">${escapeHtml(item.name)}</a>
+                    </div>
+                </td>
+                <td class="cache-col-size">${formatSizeBytes(item.size_bytes)}</td>
+                <td class="cache-col-items">${item.item_count !== null ? item.item_count : '—'}</td>
+            `;
+        } else {
+            row.innerHTML = `
+                <td class="cache-col-name">
+                    <div class="cache-item-name">
+                        <span class="cache-item-icon">📄</span>
+                        <span class="cache-item-file">${escapeHtml(item.name)}</span>
+                    </div>
+                </td>
+                <td class="cache-col-size">${formatSizeBytes(item.size_bytes)}</td>
+                <td class="cache-col-items">—</td>
+            `;
+        }
+        tbody.appendChild(row);
+    }
+
+    updateSortIndicators();
+}
+
+function updateSortIndicators() {
+    const headers = document.querySelectorAll('.cache-table th.sortable');
+    headers.forEach(th => {
+        th.classList.remove('active', 'asc');
+        if (th.dataset.sort === cacheSortColumn) {
+            th.classList.add('active');
+            if (cacheSortAsc) {
+                th.classList.add('asc');
+            }
+        }
+    });
+}
+
+let sortHandlersInitialized = false;
+
+function setupCacheSortHandlers() {
+    if (sortHandlersInitialized) {
+        updateSortIndicators();
+        return;
+    }
+
+    const headers = document.querySelectorAll('.cache-table th.sortable');
+    headers.forEach(th => {
+        th.addEventListener('click', () => {
+            const column = th.dataset.sort;
+            if (cacheSortColumn === column) {
+                // Toggle direction
+                cacheSortAsc = !cacheSortAsc;
+            } else {
+                // New column - default to descending for size/items, ascending for name
+                cacheSortColumn = column;
+                cacheSortAsc = column === 'name';
+            }
+            renderCacheItems(currentCachePath);
+        });
+    });
+
+    sortHandlersInitialized = true;
+    updateSortIndicators();
 }
 
 // ============================================

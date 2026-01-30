@@ -932,6 +932,41 @@ body:has(.action-bar) main {
     text-align: right;
 }
 
+.cache-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s ease;
+}
+
+.cache-table th.sortable:hover {
+    color: var(--accent);
+}
+
+.cache-table th.sortable.active {
+    color: var(--accent);
+}
+
+.sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.cache-table th.sortable:hover .sort-arrow,
+.cache-table th.sortable.active .sort-arrow {
+    opacity: 1;
+}
+
+.cache-table th.sortable.active .sort-arrow::after {
+    content: '▼';
+    font-size: 0.65em;
+}
+
+.cache-table th.sortable.active.asc .sort-arrow::after {
+    content: '▲';
+}
+
 .cache-table td.cache-col-size,
 .cache-table td.cache-col-items {
     text-align: right;

@@ -286,6 +286,9 @@ async function checkGlobalRunStatus() {
     }
 }
 
+// Polling interval for dashboard status updates
+let dashboardStatusInterval = null;
+
 async function loadRunStatus() {
     try {
         const response = await fetch('/api/run/status');
@@ -297,13 +300,43 @@ async function loadRunStatus() {
         // Update dashboard-specific elements
         const runStatus = document.getElementById('run-status');
         const runBtn = document.getElementById('run-btn');
+        const currentStatusEl = document.getElementById('current-status');
 
         if (data.is_running) {
             if (runStatus) runStatus.classList.remove('hidden');
             if (runBtn) runBtn.disabled = true;
+
+            // Update current status text
+            if (currentStatusEl && data.current_status) {
+                currentStatusEl.textContent = data.current_status;
+            }
+
+            // Start polling for status updates if not already
+            if (!dashboardStatusInterval) {
+                dashboardStatusInterval = setInterval(async () => {
+                    const statusResp = await fetch('/api/run/status');
+                    const statusData = await statusResp.json();
+
+                    if (currentStatusEl && statusData.current_status) {
+                        currentStatusEl.textContent = statusData.current_status;
+                    }
+
+                    if (!statusData.is_running) {
+                        clearInterval(dashboardStatusInterval);
+                        dashboardStatusInterval = null;
+                        loadRunStatus(); // Refresh final state
+                    }
+                }, 1000);
+            }
         } else {
             if (runStatus) runStatus.classList.add('hidden');
             if (runBtn) runBtn.disabled = false;
+
+            // Stop polling
+            if (dashboardStatusInterval) {
+                clearInterval(dashboardStatusInterval);
+                dashboardStatusInterval = null;
+            }
         }
 
         // Update last run stats
@@ -340,17 +373,14 @@ async function runScript() {
     const dryRun = document.getElementById('dry-run-toggle')?.checked ?? true;
     const runBtn = document.getElementById('run-btn');
     const runStatus = document.getElementById('run-status');
-    const outputContainer = document.getElementById('output-container');
-    const outputBox = document.getElementById('output-box');
 
     // Update UI
     if (runBtn) runBtn.disabled = true;
     if (runStatus) runStatus.classList.remove('hidden');
-    if (outputContainer) outputContainer.classList.remove('hidden');
-    if (outputBox) outputBox.textContent = 'Running script...\n';
     updateGlobalRunStatus(true);
 
     try {
+        // Start the script (returns immediately)
         const response = await fetch('/api/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -359,30 +389,51 @@ async function runScript() {
 
         const data = await response.json();
 
-        // Show output
-        if (outputBox) {
-            outputBox.textContent = data.output || 'No output';
-            if (data.error) {
-                outputBox.textContent += '\n\n--- ERRORS ---\n' + data.error;
+        if (!data.started) {
+            showAlert(data.message, 'error');
+            if (runBtn) runBtn.disabled = false;
+            if (runStatus) runStatus.classList.add('hidden');
+            updateGlobalRunStatus(false);
+            return;
+        }
+
+        // Poll for completion and update status
+        const currentStatusEl = document.getElementById('current-status');
+        const pollInterval = setInterval(async () => {
+            const statusResponse = await fetch('/api/run/status');
+            const status = await statusResponse.json();
+
+            // Update current status display
+            if (currentStatusEl && status.current_status) {
+                currentStatusEl.textContent = status.current_status;
             }
-        }
 
-        // Show alert
-        if (data.success) {
-            showAlert('Script completed successfully!', 'success');
-        } else {
-            showAlert('Script failed: ' + data.message, 'error');
-        }
+            if (!status.is_running) {
+                clearInterval(pollInterval);
 
-        // Refresh status and logs
-        await loadRunStatus();
-        await loadRecentLogs();
-        await loadCacheUsage();
+                // Script completed - update UI
+                if (runBtn) runBtn.disabled = false;
+                if (runStatus) runStatus.classList.add('hidden');
+                updateGlobalRunStatus(false);
+
+                // Show result
+                if (status.last_run) {
+                    if (status.last_run.success) {
+                        showAlert('Script completed successfully!', 'success');
+                    } else {
+                        showAlert('Script failed. Check logs for details.', 'error');
+                    }
+                }
+
+                // Refresh data
+                await loadRunStatus();
+                await loadRecentLogs();
+                await loadCacheUsage();
+            }
+        }, 1000);
 
     } catch (error) {
-        showAlert('Error running script: ' + error.message, 'error');
-        if (outputBox) outputBox.textContent = 'Error: ' + error.message;
-    } finally {
+        showAlert('Error starting script: ' + error.message, 'error');
         if (runBtn) runBtn.disabled = false;
         if (runStatus) runStatus.classList.add('hidden');
         updateGlobalRunStatus(false);

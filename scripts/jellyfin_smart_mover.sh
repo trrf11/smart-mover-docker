@@ -127,6 +127,12 @@ log_message() {
     echo "$message" | tee -a "$LOG_FILE"
 }
 
+# Function to emit status updates for the web UI
+# These are parsed by the Python runner to show current progress
+emit_status() {
+    echo "STATUS: $1"
+}
+
 # Function to log to stderr (for use inside functions with redirected stdout)
 # Only logs if DEBUG=true
 log_stderr() {
@@ -1071,8 +1077,10 @@ process_played_items() {
         # Show progress for each item
         if [ "$DRY_RUN" = true ]; then
             log_message "[$count/$total_to_move] Would move: $name"
+            emit_status "[$count/$total_to_move] Checking: $name"
         else
             log_message "[$count/$total_to_move] Moving: $name"
+            emit_status "[$count/$total_to_move] Moving: $name"
         fi
 
         local result
@@ -1253,6 +1261,7 @@ check_cache_usage() {
 main() {
     # Initialize logging
     initialize_logging
+    emit_status "Initializing..."
 
     # Announce dry-run mode if enabled
     if [ "$DRY_RUN" = true ]; then
@@ -1262,12 +1271,14 @@ main() {
     fi
 
     # Check for jq
+    emit_status "Checking dependencies..."
     if ! check_jq; then
         log_message "Error: jq is required but not installed"
         exit 1
     fi
 
     # Validate environment first
+    emit_status "Validating environment..."
     if ! validate_environment; then
         log_message "ERROR: Environment validation failed"
         exit 1
@@ -1287,10 +1298,12 @@ main() {
     # Check if mover is running
     if is_mover_running; then
         log_message "Unraid mover is currently running, skipping"
+        emit_status "Skipped - Unraid mover is running"
         exit 0
     fi
 
     # Check cache usage
+    emit_status "Checking cache usage..."
     local cache_usage
     cache_usage=$(check_cache_usage "$CACHE_DRIVE")
     if [ $? -ne 0 ]; then
@@ -1301,12 +1314,14 @@ main() {
 
     # Only process if cache usage is above threshold
     if [ "$cache_usage" -ge "$CACHE_THRESHOLD" ]; then
+        emit_status "Fetching played items from Jellyfin..."
         if ! process_played_items "$cache_usage"; then
             log_message "ERROR: Failed to process played items"
             exit 1
         fi
     else
         log_message "Cache usage (${cache_usage}%) is below threshold (${CACHE_THRESHOLD}%), no action needed"
+        emit_status "Complete - Cache below threshold"
     fi
 
     # Dry-run completion message
@@ -1315,6 +1330,9 @@ main() {
         log_message "DRY-RUN COMPLETE"
         log_message "To actually move files, run without --dry-run"
         log_message "========================================="
+        emit_status "Complete - Dry run finished"
+    else
+        emit_status "Complete"
     fi
 }
 

@@ -34,6 +34,7 @@ class RunnerState:
     is_running: bool = False
     last_run: Optional[RunResult] = None
     current_output: str = ""
+    current_status: str = ""
 
 
 class ScriptRunner:
@@ -70,6 +71,7 @@ class ScriptRunner:
                 )
             self.state.is_running = True
             self.state.current_output = ""
+            self.state.current_status = "Starting..."
 
         start_time = datetime.now()
         settings = self.config.load()
@@ -118,10 +120,14 @@ class ScriptRunner:
                 for line in iter(stream.readline, ''):
                     lines_list.append(line)
                     self.state.current_output += line
-                    # Write to log file immediately
-                    with log_file_lock:
-                        log_handle.write(line)
-                        log_handle.flush()
+                    # Parse STATUS: lines for current status
+                    if line.startswith("STATUS: "):
+                        self.state.current_status = line[8:].strip()
+                    # Write to log file immediately (skip STATUS lines)
+                    if not line.startswith("STATUS: "):
+                        with log_file_lock:
+                            log_handle.write(line)
+                            log_handle.flush()
                     if on_output:
                         on_output(line)
                 stream.close()
@@ -178,6 +184,7 @@ class ScriptRunner:
             self.state.is_running = False
             self.state.last_run = result
             self.state.current_output = ""
+            self.state.current_status = ""
 
         return result
 
@@ -199,5 +206,6 @@ class ScriptRunner:
             return {
                 "is_running": self.state.is_running,
                 "current_output": self.state.current_output,
+                "current_status": self.state.current_status,
                 "last_run": last_run_info
             }

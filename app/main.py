@@ -16,7 +16,7 @@ from app.config_manager import ConfigManager, Settings
 from app.runner import ScriptRunner
 
 # Version - update this when making changes
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.2.2"
 
 # Initialize app
 app = FastAPI(
@@ -145,29 +145,29 @@ async def get_cache_usage():
         raise HTTPException(status_code=500, detail=f"Failed to get cache usage: {str(e)}")
 
 
-@app.post("/api/run", response_model=RunResponse)
+@app.post("/api/run")
 async def run_script(request: RunRequest, background_tasks: BackgroundTasks):
-    """Execute the smart mover script."""
+    """Start the smart mover script in background."""
     status = script_runner.get_status()
 
     if status["is_running"]:
-        return RunResponse(
-            success=False,
-            message="Script is already running",
-            dry_run=request.dry_run or config_manager.load().dry_run
-        )
+        return {
+            "started": False,
+            "message": "Script is already running",
+            "dry_run": request.dry_run or config_manager.load().dry_run
+        }
 
-    # Run synchronously for now (could be made async with background tasks)
-    result = script_runner.run(dry_run=request.dry_run)
+    # Determine dry_run mode
+    dry_run = request.dry_run if request.dry_run is not None else config_manager.load().dry_run
 
-    return RunResponse(
-        success=result.success,
-        message="Script completed successfully" if result.success else "Script failed",
-        dry_run=result.dry_run,
-        output=result.output,
-        error=result.error if result.error else None,
-        duration_seconds=result.duration_seconds
-    )
+    # Run in background task (non-blocking)
+    background_tasks.add_task(script_runner.run, dry_run=dry_run)
+
+    return {
+        "started": True,
+        "message": "Script started",
+        "dry_run": dry_run
+    }
 
 
 @app.get("/api/run/status")

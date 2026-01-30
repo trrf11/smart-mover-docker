@@ -146,6 +146,30 @@ nav {
     animation: spin 0.6s linear infinite;
 }
 
+/* Run status box */
+.run-status-box {
+    background: var(--warning-muted);
+    border: 1px solid rgba(255, 153, 0, 0.3);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+}
+
+.run-status-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--warning);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.run-status-detail {
+    margin-top: var(--space-2);
+    color: var(--fg);
+    font-size: 0.85rem;
+    padding-left: 24px;
+}
+
 .nav-links {
     list-style: none;
     display: flex;

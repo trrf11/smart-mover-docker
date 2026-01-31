@@ -1,6 +1,28 @@
 // Smart Mover - Frontend JavaScript
 
 // ============================================
+// Mobile Navigation
+// ============================================
+
+function toggleNav() {
+    const navLinks = document.getElementById('nav-links');
+    if (navLinks) {
+        navLinks.classList.toggle('open');
+    }
+}
+
+// Close mobile nav when clicking a link
+document.addEventListener('DOMContentLoaded', function() {
+    const navLinks = document.querySelectorAll('.nav-links a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            const nav = document.getElementById('nav-links');
+            if (nav) nav.classList.remove('open');
+        });
+    });
+});
+
+// ============================================
 // Utility Functions
 // ============================================
 

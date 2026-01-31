@@ -999,3 +999,253 @@ body:has(.action-bar) main {
 .cache-item-file {
     color: var(--fg-secondary);
 }
+
+/* ===== Mobile Responsive ===== */
+
+/* Mobile Navigation */
+.nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--fg);
+    padding: var(--space-2);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.nav-toggle:hover {
+    background: var(--bg-elevated);
+}
+
+.nav-toggle svg {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    /* Navigation */
+    .nav-toggle {
+        display: block;
+    }
+
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        flex-direction: column;
+        padding: var(--space-2);
+        display: none;
+        gap: 0;
+    }
+
+    .nav-links.open {
+        display: flex;
+    }
+
+    .nav-links a {
+        display: block;
+        padding: var(--space-3) var(--space-4);
+        font-size: 1rem;
+    }
+
+    nav {
+        position: sticky;
+    }
+
+    .nav-inner {
+        flex-wrap: wrap;
+    }
+
+    /* Hide version badge and run status on very small screens */
+    .nav-brand .version {
+        display: none;
+    }
+
+    .nav-run-status {
+        margin-left: auto;
+        margin-right: var(--space-2);
+    }
+
+    /* Main content */
+    main {
+        padding: var(--space-5) var(--space-4);
+    }
+
+    .page-header {
+        margin-bottom: var(--space-5);
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    /* Cache display */
+    .cache-percentage {
+        font-size: 3rem;
+    }
+
+    .cache-display {
+        padding: var(--space-4) 0;
+    }
+
+    /* Cards */
+    .card {
+        padding: var(--space-4);
+    }
+
+    /* Section spacing */
+    .section {
+        margin-bottom: var(--space-5);
+    }
+
+    /* Buttons - ensure touch-friendly size */
+    .btn {
+        min-height: 44px;
+    }
+
+    .btn-lg {
+        min-height: 48px;
+        width: 100%;
+    }
+
+    .btn-sm {
+        min-height: 44px;
+        padding: 0 var(--space-4);
+    }
+
+    /* Run controls */
+    .run-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-3);
+    }
+
+    .run-controls .btn-lg {
+        width: 100%;
+    }
+
+    .dry-run-toggle {
+        justify-content: center;
+    }
+
+    /* Threshold notice - stack on mobile */
+    .threshold-notice {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-2);
+    }
+
+    /* Stats row */
+    .stats-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+
+    .stat {
+        padding: var(--space-3);
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+
+    /* Log controls - wrap nicely */
+    .log-controls {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .log-filter {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .log-filter .form-select {
+        flex: 1;
+        margin-left: var(--space-2);
+    }
+
+    /* Log viewer */
+    .log-viewer {
+        max-height: 400px !important;
+    }
+
+    /* Cache browser table - horizontal scroll */
+    .cache-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 calc(var(--space-4) * -1);
+        padding: 0 var(--space-4);
+    }
+
+    .cache-table {
+        min-width: 480px;
+    }
+
+    /* Form inputs - larger touch targets */
+    .form-input,
+    .form-select,
+    .form-textarea {
+        height: 44px;
+        font-size: 1rem;
+    }
+
+    .form-checkbox input {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* Action bar */
+    .action-bar {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .action-bar .btn {
+        flex: 1;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+        font-size: 0.85rem;
+        gap: 0;
+    }
+
+    .breadcrumb-item {
+        padding: var(--space-1);
+    }
+
+    /* FAQ */
+    .faq-list {
+        margin-left: var(--space-4);
+    }
+}
+
+/* Extra small screens (< 400px) */
+@media (max-width: 400px) {
+    main {
+        padding: var(--space-4) var(--space-3);
+    }
+
+    .cache-percentage {
+        font-size: 2.5rem;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
+    }
+
+    .card {
+        padding: var(--space-3);
+    }
+
+    .nav-brand {
+        font-size: 0.9rem;
+    }
+
+    .nav-logo {
+        width: 28px;
+        height: 28px;
+    }
+}

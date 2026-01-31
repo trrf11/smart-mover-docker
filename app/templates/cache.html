@@ -34,17 +34,19 @@
             <p id="cache-error-message">Unable to load directory</p>
         </div>
 
-        <table id="cache-table" class="cache-table hidden">
-            <thead>
-                <tr>
-                    <th class="cache-col-name sortable" data-sort="name">Name <span class="sort-arrow"></span></th>
-                    <th class="cache-col-size sortable" data-sort="size">Size <span class="sort-arrow"></span></th>
-                    <th class="cache-col-items sortable" data-sort="items">Items <span class="sort-arrow"></span></th>
-                </tr>
-            </thead>
-            <tbody id="cache-contents">
-            </tbody>
-        </table>
+        <div class="cache-table-container">
+            <table id="cache-table" class="cache-table hidden">
+                <thead>
+                    <tr>
+                        <th class="cache-col-name sortable" data-sort="name">Name <span class="sort-arrow"></span></th>
+                        <th class="cache-col-size sortable" data-sort="size">Size <span class="sort-arrow"></span></th>
+                        <th class="cache-col-items sortable" data-sort="items">Items <span class="sort-arrow"></span></th>
+                    </tr>
+                </thead>
+                <tbody id="cache-contents">
+                </tbody>
+            </table>
+        </div>
     </div>
 </section>
 {% endblock %}

@@ -17,7 +17,14 @@
                     <span class="spinner-small"></span> Running...
                 </span>
             </div>
-            <ul class="nav-links">
+            <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <ul class="nav-links" id="nav-links">
                 <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>
                 <li><a href="/cache" class="{% if request.path == '/cache' %}active{% endif %}">Cache</a></li>
                 <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">Settings</a></li>

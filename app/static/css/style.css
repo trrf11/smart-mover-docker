@@ -101,6 +101,11 @@ nav {
     font-weight: 600;
     color: var(--fg);
     letter-spacing: -0.02em;
+    text-decoration: none;
+}
+
+.nav-brand:hover {
+    color: var(--fg);
 }
 
 .nav-logo {
@@ -109,8 +114,8 @@ nav {
     border-radius: 6px;
 }
 
-.nav-brand span {
-    color: var(--accent);
+.nav-brand-text {
+    color: var(--fg);
 }
 
 .nav-brand .version {
@@ -120,8 +125,7 @@ nav {
     background: var(--bg-elevated);
     padding: 2px 6px;
     border-radius: 4px;
-    margin-left: 8px;
-    vertical-align: middle;
+    margin-left: 4px;
 }
 
 .nav-run-status {
@@ -134,7 +138,7 @@ nav {
     background: var(--warning-muted);
     padding: 4px 10px;
     border-radius: 4px;
-    margin-left: 12px;
+    margin-left: 8px;
 }
 
 .spinner-small {
@@ -857,6 +861,8 @@ body:has(.action-bar) main {
     margin-bottom: var(--space-5);
     font-size: 0.9rem;
     flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
 }
 
 .breadcrumb-item {
@@ -1270,7 +1276,9 @@ body:has(.action-bar) main {
 
     .cache-table th,
     .cache-table td {
-        padding: var(--space-2);
+        padding: var(--space-2) var(--space-1);
+        font-size: 0.8rem;
+        white-space: nowrap;
     }
 
     .cache-col-name {
@@ -1278,11 +1286,16 @@ body:has(.action-bar) main {
     }
 
     .cache-col-size {
-        width: 60px;
+        width: 55px;
     }
 
     .cache-col-items {
-        width: 45px;
+        width: 40px;
+    }
+
+    .cache-table td.cache-col-size,
+    .cache-table td.cache-col-items {
+        font-size: 0.75rem;
     }
 
     .cache-item-name {

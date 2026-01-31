@@ -10,13 +10,14 @@
 <body>
     <nav>
         <div class="nav-inner">
-            <div class="nav-brand">
+            <a href="/" class="nav-brand">
                 <img src="/static/images/logo-48.png" alt="SmartMover" class="nav-logo">
-                Smart<span>Mover</span> <span class="version">v{{ version }}</span>
-                <span id="global-run-status" class="nav-run-status hidden">
-                    <span class="spinner-small"></span> Running...
-                </span>
-            </div>
+                <span class="nav-brand-text">SmartMover</span>
+                <span class="version">v{{ version }}</span>
+            </a>
+            <span id="global-run-status" class="nav-run-status hidden">
+                <span class="spinner-small"></span> Running...
+            </span>
             <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="3" y1="6" x2="21" y2="6"></line>

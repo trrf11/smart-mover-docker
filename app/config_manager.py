@@ -3,8 +3,9 @@
 
 import json
 import os
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -126,3 +127,34 @@ class ConfigManager:
         log_file = self.get_log_file()
         if log_file.exists():
             log_file.unlink()
+
+    # Run History Management
+    def get_history_file(self) -> Path:
+        """Get path to the run history file."""
+        return self.config_dir / "run_history.json"
+
+    def save_run(self, run_record: dict) -> None:
+        """Save a run record to history."""
+        history = self.load_run_history()
+        history.insert(0, run_record)
+        # Keep only the last 50 runs
+        history = history[:50]
+        with open(self.get_history_file(), 'w') as f:
+            json.dump(history, f, indent=2)
+
+    def load_run_history(self) -> List[dict]:
+        """Load run history from file."""
+        history_file = self.get_history_file()
+        if not history_file.exists():
+            return []
+        try:
+            with open(history_file, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            return []
+
+    def clear_run_history(self) -> None:
+        """Clear the run history."""
+        history_file = self.get_history_file()
+        if history_file.exists():
+            history_file.unlink()

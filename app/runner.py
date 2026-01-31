@@ -180,6 +180,19 @@ class ScriptRunner:
             dry_run=actual_dry_run
         )
 
+        # Count files moved from output
+        files_moved = self._count_files_moved(output)
+
+        # Save to run history
+        run_record = {
+            "timestamp": start_time.isoformat(),
+            "dry_run": actual_dry_run,
+            "success": success,
+            "duration_seconds": round(duration, 1),
+            "files_moved": files_moved
+        }
+        self.config.save_run(run_record)
+
         with self._lock:
             self.state.is_running = False
             self.state.last_run = result
@@ -187,6 +200,17 @@ class ScriptRunner:
             self.state.current_status = ""
 
         return result
+
+    def _count_files_moved(self, output: str) -> int:
+        """Count number of files moved from script output."""
+        count = 0
+        for line in output.split('\n'):
+            # Look for rsync success lines or move confirmations
+            if 'Moving:' in line or 'Moved:' in line:
+                count += 1
+            elif '[DRY RUN] Would move:' in line:
+                count += 1
+        return count
 
     def get_status(self) -> dict:
         """Get current runner status."""

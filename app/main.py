@@ -16,7 +16,7 @@ from app.config_manager import ConfigManager, Settings
 from app.runner import ScriptRunner
 
 # Version - update this when making changes
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
 
 # Initialize app
 app = FastAPI(
@@ -378,6 +378,24 @@ async def clear_logs():
         return {"success": True, "message": "Logs cleared successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to clear logs: {str(e)}")
+
+
+# --- Run History ---
+
+@app.get("/api/runs")
+async def get_run_history():
+    """Get run history."""
+    return config_manager.load_run_history()
+
+
+@app.delete("/api/runs")
+async def clear_run_history():
+    """Clear run history."""
+    try:
+        config_manager.clear_run_history()
+        return {"success": True, "message": "Run history cleared"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear history: {str(e)}")
 
 
 # --- Health Check ---

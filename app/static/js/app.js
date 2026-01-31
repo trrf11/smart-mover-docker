@@ -633,6 +633,83 @@ async function clearLogs() {
 }
 
 // ============================================
+// Run History Functions
+// ============================================
+
+async function loadRunHistory() {
+    const loading = document.getElementById('run-history-loading');
+    const empty = document.getElementById('run-history-empty');
+    const table = document.getElementById('run-history-table');
+    const tbody = document.getElementById('run-history-body');
+
+    if (!tbody) return;
+
+    try {
+        const response = await fetch('/api/runs');
+        const runs = await response.json();
+
+        if (loading) loading.classList.add('hidden');
+
+        if (!runs || runs.length === 0) {
+            if (empty) empty.classList.remove('hidden');
+            if (table) table.classList.add('hidden');
+            return;
+        }
+
+        if (empty) empty.classList.add('hidden');
+        if (table) table.classList.remove('hidden');
+
+        tbody.innerHTML = runs.map(run => {
+            const date = new Date(run.timestamp);
+            const timeStr = formatRunTime(date);
+            const modeClass = run.dry_run ? 'run-mode-dry' : 'run-mode-live';
+            const modeText = run.dry_run ? 'Dry' : 'Live';
+            const statusClass = run.success ? 'run-status-success' : 'run-status-failed';
+            const statusText = run.success ? 'OK' : 'Failed';
+            const duration = formatDuration(run.duration_seconds);
+
+            return `
+                <tr>
+                    <td class="run-col-time">${timeStr}</td>
+                    <td class="run-col-mode"><span class="${modeClass}">${modeText}</span></td>
+                    <td class="run-col-status"><span class="${statusClass}">${statusText}</span></td>
+                    <td class="run-col-files">${run.files_moved}</td>
+                    <td class="run-col-duration">${duration}</td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Failed to load run history:', error);
+        if (loading) loading.classList.add('hidden');
+        if (empty) {
+            empty.classList.remove('hidden');
+            empty.querySelector('p').textContent = 'Failed to load history';
+        }
+    }
+}
+
+function formatRunTime(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) {
+        return 'Just now';
+    } else if (diffMins < 60) {
+        return `${diffMins}m ago`;
+    } else if (diffHours < 24) {
+        return `${diffHours}h ago`;
+    } else if (diffDays < 7) {
+        return `${diffDays}d ago`;
+    } else {
+        return date.toLocaleDateString();
+    }
+}
+
+// ============================================
 // Cache Browser Functions
 // ============================================
 
@@ -879,6 +956,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Logs page
     if (path === '/logs') {
+        loadRunHistory();
         loadLogs();
     }
 

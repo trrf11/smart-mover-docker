@@ -10,7 +10,45 @@
 <!-- Alert container for messages -->
 <div id="alert-container"></div>
 
+<!-- Run History -->
 <section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Run History</h2>
+    </div>
+
+    <div class="card">
+        <div id="run-history-loading" class="empty-state">
+            <div class="spinner"></div>
+        </div>
+
+        <div id="run-history-empty" class="empty-state hidden">
+            <p class="text-muted">No runs yet</p>
+        </div>
+
+        <div class="run-history-container">
+            <table id="run-history-table" class="run-history-table hidden">
+                <thead>
+                    <tr>
+                        <th class="run-col-time">Time</th>
+                        <th class="run-col-mode">Mode</th>
+                        <th class="run-col-status">Status</th>
+                        <th class="run-col-files">Files</th>
+                        <th class="run-col-duration">Duration</th>
+                    </tr>
+                </thead>
+                <tbody id="run-history-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Logs -->
+<section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Output Log</h2>
+    </div>
+
     <div class="log-controls">
         <div class="log-filter">
             <label for="log-level-filter" class="text-secondary" style="font-size: 0.85rem;">Filter:</label>

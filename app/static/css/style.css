@@ -1000,6 +1000,91 @@ body:has(.action-bar) main {
     color: var(--fg-secondary);
 }
 
+/* ===== Run History Table ===== */
+.run-history-container {
+    overflow-x: auto;
+}
+
+.run-history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.run-history-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fg-muted);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.run-history-table td {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.run-history-table tr:last-child td {
+    border-bottom: none;
+}
+
+.run-col-time {
+    width: auto;
+}
+
+.run-col-mode {
+    width: 80px;
+}
+
+.run-col-status {
+    width: 80px;
+}
+
+.run-col-files {
+    width: 60px;
+    text-align: right;
+}
+
+.run-col-duration {
+    width: 80px;
+    text-align: right;
+}
+
+.run-history-table td.run-col-files,
+.run-history-table td.run-col-duration {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--fg-secondary);
+}
+
+.run-history-table th.run-col-files,
+.run-history-table th.run-col-duration {
+    text-align: right;
+}
+
+.run-mode-dry {
+    color: var(--fg-secondary);
+}
+
+.run-mode-live {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.run-status-success {
+    color: var(--success);
+}
+
+.run-status-failed {
+    color: var(--error);
+}
+
 /* ===== Mobile Responsive ===== */
 
 /* Mobile Navigation */
@@ -1038,6 +1123,7 @@ body:has(.action-bar) main {
         padding: var(--space-2);
         display: none;
         gap: 0;
+        z-index: 200;
     }
 
     .nav-links.open {
@@ -1172,16 +1258,82 @@ body:has(.action-bar) main {
         max-height: 400px !important;
     }
 
-    /* Cache browser table - horizontal scroll */
+    /* Cache browser table - fit to screen */
     .cache-table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        margin: 0 calc(var(--space-4) * -1);
-        padding: 0 var(--space-4);
+        overflow-x: hidden;
     }
 
     .cache-table {
-        min-width: 480px;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .cache-table th,
+    .cache-table td {
+        padding: var(--space-2);
+    }
+
+    .cache-col-name {
+        width: auto;
+    }
+
+    .cache-col-size {
+        width: 60px;
+    }
+
+    .cache-col-items {
+        width: 45px;
+    }
+
+    .cache-item-name {
+        overflow: hidden;
+    }
+
+    .cache-item-link,
+    .cache-item-file {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Run history table - compact for mobile */
+    .run-history-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .run-history-table th,
+    .run-history-table td {
+        padding: var(--space-2);
+        font-size: 0.8rem;
+    }
+
+    .run-col-time {
+        width: auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .run-col-mode {
+        width: 50px;
+    }
+
+    .run-col-status {
+        width: 55px;
+    }
+
+    .run-col-files {
+        width: 40px;
+    }
+
+    .run-col-duration {
+        width: 50px;
+    }
+
+    .run-history-table td.run-col-files,
+    .run-history-table td.run-col-duration {
+        font-size: 0.75rem;
     }
 
     /* Form inputs - larger touch targets */

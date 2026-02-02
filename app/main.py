@@ -16,6 +16,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config_manager import ConfigManager, Settings
 from app.runner import ScriptRunner
+from app.scheduler import SmartMoverScheduler
 
 
 # Security headers middleware
@@ -30,7 +31,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 # Version - update this when making changes
-APP_VERSION = "1.5.4"
+APP_VERSION = "1.6.0"
 
 # Initialize app
 app = FastAPI(
@@ -43,9 +44,23 @@ app = FastAPI(
 CONFIG_DIR = os.environ.get('CONFIG_DIR', '/config')
 config_manager = ConfigManager(config_dir=CONFIG_DIR)
 script_runner = ScriptRunner(config_manager)
+scheduler = SmartMoverScheduler(script_runner, config_manager)
 
 # Add security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
+
+
+# Startup and shutdown events
+@app.on_event("startup")
+async def startup_event():
+    """Start the scheduler when the app starts."""
+    scheduler.start()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop the scheduler when the app shuts down."""
+    scheduler.stop()
 
 # Static files and templates
 BASE_DIR = Path(__file__).resolve().parent
@@ -345,6 +360,11 @@ async def save_settings(settings_update: SettingsUpdate):
         current_dict.update(update_data)
         new_settings = Settings(**current_dict)
         config_manager.save(new_settings)
+
+        # Update scheduler if schedule settings changed
+        if 'schedule_enabled' in update_data or 'schedule_cron' in update_data:
+            scheduler.update_schedule()
+
         return {"success": True, "message": "Settings saved successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to save settings: {str(e)}")
@@ -413,6 +433,22 @@ async def clear_run_history():
         return {"success": True, "message": "Run history cleared"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to clear history: {str(e)}")
+
+
+# --- Schedule Status ---
+
+@app.get("/api/schedule/status")
+async def get_schedule_status():
+    """Get current schedule status from the scheduler."""
+    settings = config_manager.load()
+    next_run = scheduler.get_next_run_time()
+    return {
+        "enabled": settings.schedule_enabled,
+        "cron": settings.schedule_cron,
+        "timezone": scheduler.get_timezone(),
+        "next_run": next_run.isoformat() if next_run else None,
+        "is_active": scheduler.is_enabled()
+    }
 
 
 # --- Health Check ---

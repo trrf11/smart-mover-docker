@@ -30,7 +30,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 # Version - update this when making changes
-APP_VERSION = "1.5.3"
+APP_VERSION = "1.5.4"
 
 # Initialize app
 app = FastAPI(

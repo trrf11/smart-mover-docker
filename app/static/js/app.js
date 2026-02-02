@@ -32,7 +32,7 @@ function showAlert(message, type = 'info') {
 
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
-    alert.innerHTML = message;
+    alert.textContent = message;
 
     container.innerHTML = '';
     container.appendChild(alert);

@@ -12,11 +12,25 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from app.config_manager import ConfigManager, Settings
 from app.runner import ScriptRunner
 
+
+# Security headers middleware
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+
 # Version - update this when making changes
-APP_VERSION = "1.5.1"
+APP_VERSION = "1.5.2"
 
 # Initialize app
 app = FastAPI(
@@ -29,6 +43,9 @@ app = FastAPI(
 CONFIG_DIR = os.environ.get('CONFIG_DIR', '/config')
 config_manager = ConfigManager(config_dir=CONFIG_DIR)
 script_runner = ScriptRunner(config_manager)
+
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Static files and templates
 BASE_DIR = Path(__file__).resolve().parent

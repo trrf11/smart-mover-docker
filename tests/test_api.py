@@ -357,7 +357,7 @@ class TestRunEndpoints:
         # Should return a response (may fail due to missing script, but endpoint works)
         assert response.status_code == 200
         data = response.json()
-        assert "success" in data
+        assert "started" in data
         assert "dry_run" in data
 
     def test_post_run_respects_dry_run_flag(self, client):

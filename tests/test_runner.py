@@ -292,3 +292,61 @@ class TestScriptRunner:
         assert len(received_lines) >= 2
         assert any('Line 1' in line for line in received_lines)
         assert any('Line 2' in line for line in received_lines)
+
+    def test_count_files_moved_moving(self, runner):
+        """_count_files_moved should count 'Moving:' lines."""
+        output = "Starting...\nMoving: /path/to/file1.mkv\nMoving: /path/to/file2.mkv\nDone"
+        assert runner._count_files_moved(output) == 2
+
+    def test_count_files_moved_dry_run(self, runner):
+        """_count_files_moved should count '[DRY RUN] Would move:' lines."""
+        output = "[DRY RUN] Would move: /path/to/movie.mkv\n[DRY RUN] Would move: /path/to/show.mkv\n"
+        assert runner._count_files_moved(output) == 2
+
+    def test_count_files_moved_mixed(self, runner):
+        """_count_files_moved should count both Moving and DRY RUN patterns."""
+        output = "Moving: /path/file1.mkv\n[DRY RUN] Would move: /path/file2.mkv\nMoved: /path/file3.mkv\n"
+        assert runner._count_files_moved(output) == 3
+
+    def test_count_files_moved_none(self, runner):
+        """_count_files_moved should return 0 when no matching lines."""
+        output = "Starting smart mover...\nChecking cache usage...\nDone.\n"
+        assert runner._count_files_moved(output) == 0
+
+    def test_run_parses_status_lines(self, runner, config_manager, temp_config_dir):
+        """STATUS: lines should update current_status but not appear in log file."""
+        settings = Settings()
+        config_manager.save(settings)
+
+        script_path = Path(temp_config_dir) / "test_script.sh"
+        script_path.write_text("#!/bin/bash\necho 'STATUS: Checking movies'\necho 'Regular output'\n")
+        script_path.chmod(0o755)
+
+        with patch.object(ScriptRunner, 'SCRIPT_PATH', script_path):
+            result = runner.run()
+
+        # STATUS line should be in output (captured from stdout)
+        assert "STATUS: Checking movies" in result.output
+        # Regular output should be in log file
+        log_content = config_manager.get_log_file().read_text()
+        assert "Regular output" in log_content
+        # STATUS line should NOT be in log file
+        assert "STATUS: Checking movies" not in log_content
+
+    def test_run_saves_to_history(self, runner, config_manager, temp_config_dir):
+        """After run, a record should be saved to run history."""
+        settings = Settings()
+        config_manager.save(settings)
+
+        script_path = Path(temp_config_dir) / "test_script.sh"
+        script_path.write_text("#!/bin/bash\necho 'Moving: /path/to/file.mkv'\nexit 0\n")
+        script_path.chmod(0o755)
+
+        with patch.object(ScriptRunner, 'SCRIPT_PATH', script_path):
+            runner.run(dry_run=True)
+
+        history = config_manager.load_run_history()
+        assert len(history) == 1
+        assert history[0]["success"] is True
+        assert history[0]["dry_run"] is True
+        assert history[0]["files_moved"] == 1

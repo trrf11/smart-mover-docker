@@ -29,6 +29,10 @@ def reset_config():
     if log_file.exists():
         log_file.unlink()
 
+    history_file = config_manager.get_history_file()
+    if history_file.exists():
+        history_file.unlink()
+
     yield
 
 
@@ -387,3 +391,185 @@ class TestStaticFiles:
         response = client.get("/static/js/app.js")
         assert response.status_code == 200
         assert "javascript" in response.headers["content-type"]
+
+
+class TestCacheContentsEndpoint:
+    """Tests for the cache contents API endpoint."""
+
+    @pytest.fixture
+    def cache_dir(self):
+        """Create a temp directory with known structure to act as cache drive."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create files and folders
+            os.makedirs(os.path.join(tmpdir, "movies-pool", "Movie A (2024)"))
+            os.makedirs(os.path.join(tmpdir, "tv-pool"))
+            # Create a file inside movies-pool/Movie A (2024)
+            with open(os.path.join(tmpdir, "movies-pool", "Movie A (2024)", "movie.mkv"), 'w') as f:
+                f.write("x" * 100)
+            # Create a top-level file
+            with open(os.path.join(tmpdir, "readme.txt"), 'w') as f:
+                f.write("hello")
+            yield tmpdir
+
+    def _save_cache_settings(self, cache_path):
+        """Helper to save settings with custom cache_drive."""
+        settings = Settings(cache_drive=cache_path)
+        config_manager.save(settings)
+
+    def test_cache_contents_lists_directory(self, client, cache_dir):
+        """Cache contents should list files and folders."""
+        self._save_cache_settings(cache_dir)
+        response = client.get("/api/cache-contents")
+        assert response.status_code == 200
+        data = response.json()
+        names = [item["name"] for item in data["items"]]
+        assert "movies-pool" in names
+        assert "tv-pool" in names
+        assert "readme.txt" in names
+
+    def test_cache_contents_returns_files_and_folders(self, client, cache_dir):
+        """Items should have correct type, size_bytes, and item_count."""
+        self._save_cache_settings(cache_dir)
+        response = client.get("/api/cache-contents")
+        data = response.json()
+        items_by_name = {item["name"]: item for item in data["items"]}
+
+        # Folder checks
+        movies = items_by_name["movies-pool"]
+        assert movies["type"] == "folder"
+        assert movies["size_bytes"] >= 100  # contains movie.mkv with 100 bytes
+        assert movies["item_count"] >= 1  # at least the subfolder + file
+
+        # File checks
+        readme = items_by_name["readme.txt"]
+        assert readme["type"] == "file"
+        assert readme["size_bytes"] == 5  # "hello"
+
+    def test_cache_contents_sorts_folders_first(self, client, cache_dir):
+        """Folders should come before files, alphabetical within type."""
+        self._save_cache_settings(cache_dir)
+        response = client.get("/api/cache-contents")
+        data = response.json()
+        types = [item["type"] for item in data["items"]]
+
+        # All folders should come before any files
+        folder_done = False
+        for t in types:
+            if t == "file":
+                folder_done = True
+            elif t == "folder" and folder_done:
+                pytest.fail("Folder appeared after file in listing")
+
+    def test_cache_contents_path_traversal_dotdot(self, client, cache_dir):
+        """Path traversal with .. should return 400."""
+        self._save_cache_settings(cache_dir)
+        response = client.get("/api/cache-contents?path=../../etc")
+        assert response.status_code == 400
+
+    def test_cache_contents_path_traversal_absolute(self, client, cache_dir):
+        """Absolute path should return 400."""
+        self._save_cache_settings(cache_dir)
+        response = client.get("/api/cache-contents?path=/etc/passwd")
+        assert response.status_code == 400
+
+    def test_cache_contents_nonexistent_path(self, client, cache_dir):
+        """Nonexistent path should return 404."""
+        self._save_cache_settings(cache_dir)
+        response = client.get("/api/cache-contents?path=does-not-exist")
+        assert response.status_code == 404
+
+    def test_cache_contents_file_not_dir(self, client, cache_dir):
+        """Path pointing to a file should return 400."""
+        self._save_cache_settings(cache_dir)
+        response = client.get("/api/cache-contents?path=readme.txt")
+        assert response.status_code == 400
+
+    def test_cache_contents_empty_path(self, client, cache_dir):
+        """Empty path should list root cache directory."""
+        self._save_cache_settings(cache_dir)
+        response = client.get("/api/cache-contents?path=")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["path"] == "/"
+        assert len(data["items"]) > 0
+
+
+class TestRunHistoryEndpoints:
+    """Tests for the run history API endpoints."""
+
+    def test_get_runs_empty(self, client):
+        """GET /api/runs with no history should return empty list."""
+        response = client.get("/api/runs")
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_get_runs_returns_data(self, client):
+        """GET /api/runs should return saved records."""
+        config_manager.save_run({"timestamp": "2024-01-01T10:00:00", "success": True})
+        config_manager.save_run({"timestamp": "2024-01-01T11:00:00", "success": False})
+
+        response = client.get("/api/runs")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        # Most recent first
+        assert data[0]["success"] is False
+        assert data[1]["success"] is True
+
+    def test_delete_runs_clears_history(self, client):
+        """DELETE /api/runs should clear all history."""
+        config_manager.save_run({"timestamp": "2024-01-01T10:00:00", "success": True})
+
+        response = client.delete("/api/runs")
+        assert response.status_code == 200
+        assert response.json()["success"] is True
+
+        # Verify empty
+        response = client.get("/api/runs")
+        assert response.json() == []
+
+
+class TestScheduleStatusEndpoint:
+    """Tests for the schedule status API endpoint."""
+
+    def test_schedule_status_disabled(self, client):
+        """Default schedule should be disabled."""
+        response = client.get("/api/schedule/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["enabled"] is False
+
+    def test_schedule_status_fields(self, client):
+        """Schedule status should include all required fields."""
+        response = client.get("/api/schedule/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "enabled" in data
+        assert "cron" in data
+        assert "timezone" in data
+        assert "next_run" in data
+        assert "is_active" in data
+
+
+class TestSecurityHeaders:
+    """Tests for security headers middleware."""
+
+    def test_security_headers_present(self, client):
+        """Responses should include security headers."""
+        response = client.get("/health")
+        assert response.headers.get("X-Content-Type-Options") == "nosniff"
+        assert response.headers.get("X-Frame-Options") == "SAMEORIGIN"
+        assert response.headers.get("X-XSS-Protection") == "1; mode=block"
+        assert response.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+
+    def test_help_page_returns_html(self, client):
+        """Help page should return HTML."""
+        response = client.get("/help")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+
+    def test_cache_page_returns_html(self, client):
+        """Cache page should return HTML."""
+        response = client.get("/cache")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]

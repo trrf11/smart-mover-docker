@@ -259,3 +259,84 @@ class TestConfigManager:
 
         settings = config_manager.load()
         assert settings == Settings()
+
+
+class TestConfigManagerRunHistory:
+    """Tests for ConfigManager run history methods."""
+
+    @pytest.fixture
+    def temp_config_dir(self):
+        """Create a temporary config directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield tmpdir
+
+    @pytest.fixture
+    def config_manager(self, temp_config_dir):
+        """Create a ConfigManager with temporary directory."""
+        return ConfigManager(config_dir=temp_config_dir)
+
+    def test_get_history_file_path(self, config_manager, temp_config_dir):
+        """get_history_file should return config_dir/run_history.json."""
+        expected = Path(temp_config_dir) / "run_history.json"
+        assert config_manager.get_history_file() == expected
+
+    def test_save_run_creates_file(self, config_manager, temp_config_dir):
+        """First save_run should create the history file."""
+        history_file = Path(temp_config_dir) / "run_history.json"
+        assert not history_file.exists()
+
+        config_manager.save_run({"timestamp": "2024-01-01T10:00:00", "success": True})
+        assert history_file.exists()
+
+    def test_save_run_prepends_record(self, config_manager):
+        """Newest record should be first in the list."""
+        config_manager.save_run({"id": 1, "timestamp": "2024-01-01T10:00:00"})
+        config_manager.save_run({"id": 2, "timestamp": "2024-01-01T11:00:00"})
+
+        history = config_manager.load_run_history()
+        assert history[0]["id"] == 2
+        assert history[1]["id"] == 1
+
+    def test_save_run_truncates_at_50(self, config_manager):
+        """History should be truncated to 50 records."""
+        for i in range(51):
+            config_manager.save_run({"id": i, "timestamp": f"2024-01-01T{i:02d}:00:00"})
+
+        history = config_manager.load_run_history()
+        assert len(history) == 50
+        # Most recent (id=50) should be first
+        assert history[0]["id"] == 50
+
+    def test_load_run_history_empty(self, config_manager):
+        """load_run_history should return empty list when no file."""
+        assert config_manager.load_run_history() == []
+
+    def test_load_run_history_returns_data(self, config_manager):
+        """Saved records should be loadable."""
+        record = {"timestamp": "2024-01-01T10:00:00", "success": True, "duration_seconds": 5.0}
+        config_manager.save_run(record)
+
+        history = config_manager.load_run_history()
+        assert len(history) == 1
+        assert history[0]["success"] is True
+        assert history[0]["duration_seconds"] == 5.0
+
+    def test_load_run_history_invalid_json(self, config_manager, temp_config_dir):
+        """Corrupt history file should return empty list."""
+        history_file = Path(temp_config_dir) / "run_history.json"
+        history_file.write_text("not valid json {{{")
+
+        assert config_manager.load_run_history() == []
+
+    def test_clear_run_history(self, config_manager, temp_config_dir):
+        """clear_run_history should delete the history file."""
+        config_manager.save_run({"timestamp": "2024-01-01T10:00:00"})
+        history_file = Path(temp_config_dir) / "run_history.json"
+        assert history_file.exists()
+
+        config_manager.clear_run_history()
+        assert not history_file.exists()
+
+    def test_clear_run_history_no_error_when_missing(self, config_manager):
+        """clear_run_history should not error when no file exists."""
+        config_manager.clear_run_history()  # Should not raise

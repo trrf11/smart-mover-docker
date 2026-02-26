@@ -297,15 +297,15 @@ class TestConfigManagerRunHistory:
         assert history[0]["id"] == 2
         assert history[1]["id"] == 1
 
-    def test_save_run_truncates_at_50(self, config_manager):
-        """History should be truncated to 50 records."""
-        for i in range(51):
-            config_manager.save_run({"id": i, "timestamp": f"2024-01-01T{i:02d}:00:00"})
+    def test_save_run_truncates_at_100(self, config_manager):
+        """History should be truncated to 100 records."""
+        for i in range(101):
+            config_manager.save_run({"id": i, "timestamp": f"2024-01-01T{i:03d}:00:00"})
 
         history = config_manager.load_run_history()
-        assert len(history) == 50
-        # Most recent (id=50) should be first
-        assert history[0]["id"] == 50
+        assert len(history) == 100
+        # Most recent (id=100) should be first
+        assert history[0]["id"] == 100
 
     def test_load_run_history_empty(self, config_manager):
         """load_run_history should return empty list when no file."""

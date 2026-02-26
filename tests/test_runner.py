@@ -313,6 +313,16 @@ class TestScriptRunner:
         output = "Starting smart mover...\nChecking cache usage...\nDone.\n"
         assert runner._count_files_moved(output) == 0
 
+    def test_count_files_moved_skips_status_lines(self, runner):
+        """_count_files_moved should not double-count STATUS: lines."""
+        output = (
+            "[1/2] Moving: /path/to/file1.mkv\n"
+            "STATUS: [1/2] Moving: /path/to/file1.mkv\n"
+            "[2/2] Moving: /path/to/file2.mkv\n"
+            "STATUS: [2/2] Moving: /path/to/file2.mkv\n"
+        )
+        assert runner._count_files_moved(output) == 2
+
     def test_run_parses_status_lines(self, runner, config_manager, temp_config_dir):
         """STATUS: lines should update current_status but not appear in log file."""
         settings = Settings()
@@ -349,4 +359,30 @@ class TestScriptRunner:
         assert len(history) == 1
         assert history[0]["success"] is True
         assert history[0]["dry_run"] is True
+        assert history[0]["files_moved"] == 1
+        assert "log" in history[0]
+        assert "Moving: /path/to/file.mkv" in history[0]["log"]
+
+    def test_run_history_log_excludes_status_lines(self, runner, config_manager, temp_config_dir):
+        """The log field in run history should not contain STATUS: lines."""
+        settings = Settings()
+        config_manager.save(settings)
+
+        script_path = Path(temp_config_dir) / "test_script.sh"
+        script_path.write_text(
+            "#!/bin/bash\n"
+            "echo 'STATUS: [1/1] Moving: test'\n"
+            "echo '[1/1] Moving: test'\n"
+            "echo 'Done'\n"
+        )
+        script_path.chmod(0o755)
+
+        with patch.object(ScriptRunner, 'SCRIPT_PATH', script_path):
+            runner.run()
+
+        history = config_manager.load_run_history()
+        assert len(history) == 1
+        assert "STATUS:" not in history[0]["log"]
+        assert "[1/1] Moving: test" in history[0]["log"]
+        assert "Done" in history[0]["log"]
         assert history[0]["files_moved"] == 1

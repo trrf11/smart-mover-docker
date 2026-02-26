@@ -183,13 +183,20 @@ class ScriptRunner:
         # Count files moved from output
         files_moved = self._count_files_moved(output)
 
+        # Filter STATUS lines from log output for storage
+        log_output = '\n'.join(
+            line for line in output.split('\n')
+            if not line.startswith("STATUS: ")
+        ).strip()
+
         # Save to run history
         run_record = {
             "timestamp": start_time.isoformat(),
             "dry_run": actual_dry_run,
             "success": success,
             "duration_seconds": round(duration, 1),
-            "files_moved": files_moved
+            "files_moved": files_moved,
+            "log": log_output
         }
         self.config.save_run(run_record)
 
@@ -205,6 +212,9 @@ class ScriptRunner:
         """Count number of files moved from script output."""
         count = 0
         for line in output.split('\n'):
+            # Skip STATUS: lines to avoid double-counting
+            if line.startswith("STATUS: "):
+                continue
             # Look for rsync success lines or move confirmations
             if 'Moving:' in line or 'Moved:' in line:
                 count += 1

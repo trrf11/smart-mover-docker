@@ -137,8 +137,8 @@ class ConfigManager:
         """Save a run record to history."""
         history = self.load_run_history()
         history.insert(0, run_record)
-        # Keep only the last 50 runs
-        history = history[:50]
+        # Keep only the last 100 runs
+        history = history[:100]
         with open(self.get_history_file(), 'w') as f:
             json.dump(history, f, indent=2)
 

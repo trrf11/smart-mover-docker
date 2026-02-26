@@ -12,6 +12,7 @@ A Docker-based web application for Unraid that intelligently moves watched media
   - Movies: Moves entire folder (video + subtitles + extras)
   - TV Shows: Moves episode files + matching subtitles
 - **Dry-Run Mode**: Preview changes before executing
+- **Run History**: Paginated log of past runs with expandable per-run log details (last 100 runs)
 - **Logging**: Configurable log levels with web viewer, copy-to-clipboard, and download
 - **Version Display**: Version shown in UI header for easy debugging
 

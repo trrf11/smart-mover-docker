@@ -636,6 +636,10 @@ async function clearLogs() {
 // Run History Functions
 // ============================================
 
+const RUNS_PER_PAGE = 10;
+let allRuns = [];
+let currentRunPage = 1;
+
 async function loadRunHistory() {
     const loading = document.getElementById('run-history-loading');
     const empty = document.getElementById('run-history-empty');
@@ -646,38 +650,25 @@ async function loadRunHistory() {
 
     try {
         const response = await fetch('/api/runs');
-        const runs = await response.json();
+        allRuns = await response.json() || [];
 
         if (loading) loading.classList.add('hidden');
 
-        if (!runs || runs.length === 0) {
+        if (allRuns.length === 0) {
             if (empty) empty.classList.remove('hidden');
             if (table) table.classList.add('hidden');
+            updateRunPagination();
             return;
         }
 
         if (empty) empty.classList.add('hidden');
         if (table) table.classList.remove('hidden');
 
-        tbody.innerHTML = runs.map(run => {
-            const date = new Date(run.timestamp);
-            const timeStr = formatRunTime(date);
-            const modeClass = run.dry_run ? 'run-mode-dry' : 'run-mode-live';
-            const modeText = run.dry_run ? 'Dry' : 'Live';
-            const statusClass = run.success ? 'run-status-success' : 'run-status-failed';
-            const statusText = run.success ? 'OK' : 'Failed';
-            const duration = formatDuration(run.duration_seconds);
+        // Clamp current page in case runs were cleared
+        const totalPages = Math.ceil(allRuns.length / RUNS_PER_PAGE);
+        if (currentRunPage > totalPages) currentRunPage = totalPages;
 
-            return `
-                <tr>
-                    <td class="run-col-time">${timeStr}</td>
-                    <td class="run-col-mode"><span class="${modeClass}">${modeText}</span></td>
-                    <td class="run-col-status"><span class="${statusClass}">${statusText}</span></td>
-                    <td class="run-col-files">${run.files_moved}</td>
-                    <td class="run-col-duration">${duration}</td>
-                </tr>
-            `;
-        }).join('');
+        renderRunHistoryPage();
 
     } catch (error) {
         console.error('Failed to load run history:', error);
@@ -687,6 +678,91 @@ async function loadRunHistory() {
             empty.querySelector('p').textContent = 'Failed to load history';
         }
     }
+}
+
+function renderRunHistoryPage() {
+    const tbody = document.getElementById('run-history-body');
+    if (!tbody) return;
+
+    const start = (currentRunPage - 1) * RUNS_PER_PAGE;
+    const pageRuns = allRuns.slice(start, start + RUNS_PER_PAGE);
+
+    tbody.innerHTML = pageRuns.map((run, i) => {
+        const index = start + i;
+        const date = new Date(run.timestamp);
+        const timeStr = formatRunTime(date);
+        const modeClass = run.dry_run ? 'run-mode-dry' : 'run-mode-live';
+        const modeText = run.dry_run ? 'Dry' : 'Live';
+        const statusClass = run.success ? 'run-status-success' : 'run-status-failed';
+        const statusText = run.success ? 'OK' : 'Failed';
+        const duration = formatDuration(run.duration_seconds);
+        const hasLog = run.log && run.log.trim().length > 0;
+        const escapedLog = hasLog ? escapeHtml(run.log) : '';
+
+        return `
+            <tr class="run-row${hasLog ? ' run-row-clickable' : ''}" ${hasLog ? `onclick="toggleRunLog(${index})"` : ''}>
+                <td class="run-col-time">${hasLog ? '<span class="run-expand-icon" id="run-icon-' + index + '">&#9654;</span> ' : ''}${timeStr}</td>
+                <td class="run-col-mode"><span class="${modeClass}">${modeText}</span></td>
+                <td class="run-col-status"><span class="${statusClass}">${statusText}</span></td>
+                <td class="run-col-files">${run.files_moved}</td>
+                <td class="run-col-duration">${duration}</td>
+            </tr>
+            ${hasLog ? `<tr class="run-log-row hidden" id="run-log-${index}">
+                <td colspan="5">
+                    <div class="run-log-content"><pre>${escapedLog}</pre></div>
+                </td>
+            </tr>` : ''}
+        `;
+    }).join('');
+
+    updateRunPagination();
+}
+
+function updateRunPagination() {
+    const container = document.getElementById('run-pagination');
+    if (!container) return;
+
+    const totalPages = Math.ceil(allRuns.length / RUNS_PER_PAGE);
+
+    if (totalPages <= 1) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    container.classList.remove('hidden');
+
+    const prevDisabled = currentRunPage <= 1 ? 'disabled' : '';
+    const nextDisabled = currentRunPage >= totalPages ? 'disabled' : '';
+
+    container.innerHTML = `
+        <button class="btn btn-sm btn-ghost" onclick="goToRunPage(${currentRunPage - 1})" ${prevDisabled}>&lsaquo; Prev</button>
+        <span class="run-page-info">Page ${currentRunPage} of ${totalPages}</span>
+        <button class="btn btn-sm btn-ghost" onclick="goToRunPage(${currentRunPage + 1})" ${nextDisabled}>Next &rsaquo;</button>
+    `;
+}
+
+function goToRunPage(page) {
+    const totalPages = Math.ceil(allRuns.length / RUNS_PER_PAGE);
+    if (page < 1 || page > totalPages) return;
+    currentRunPage = page;
+    renderRunHistoryPage();
+}
+
+function toggleRunLog(index) {
+    const logRow = document.getElementById(`run-log-${index}`);
+    const icon = document.getElementById(`run-icon-${index}`);
+    if (logRow) {
+        logRow.classList.toggle('hidden');
+        if (icon) {
+            icon.textContent = logRow.classList.contains('hidden') ? '\u25B6' : '\u25BC';
+        }
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function formatRunTime(date) {

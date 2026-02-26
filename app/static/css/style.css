@@ -1091,6 +1091,63 @@ body:has(.action-bar) main {
     color: var(--error);
 }
 
+/* Run History Accordion */
+.run-row-clickable {
+    cursor: pointer;
+}
+
+.run-row-clickable:hover td {
+    background: var(--bg-elevated);
+}
+
+.run-expand-icon {
+    display: inline-block;
+    font-size: 0.65rem;
+    color: var(--fg-muted);
+    margin-right: var(--space-1);
+    transition: transform 0.15s;
+}
+
+.run-log-row td {
+    padding: 0 !important;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.run-log-content {
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--bg-inset);
+    border-top: 1px solid var(--border-subtle);
+    padding: var(--space-3);
+}
+
+.run-log-content pre {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--fg-secondary);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Run History Pagination */
+.run-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.run-page-info {
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+    min-width: 90px;
+    text-align: center;
+}
+
 /* ===== Mobile Responsive ===== */
 
 /* Mobile Navigation */

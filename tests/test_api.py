@@ -516,6 +516,21 @@ class TestRunHistoryEndpoints:
         assert data[0]["success"] is False
         assert data[1]["success"] is True
 
+    def test_get_runs_returns_log_field(self, client):
+        """GET /api/runs should include the log field when present."""
+        config_manager.save_run({
+            "timestamp": "2024-01-01T10:00:00",
+            "success": True,
+            "files_moved": 1,
+            "log": "[1/1] Moving: test\nDone"
+        })
+
+        response = client.get("/api/runs")
+        data = response.json()
+        assert len(data) == 1
+        assert "log" in data[0]
+        assert "Moving: test" in data[0]["log"]
+
     def test_delete_runs_clears_history(self, client):
         """DELETE /api/runs should clear all history."""
         config_manager.save_run({"timestamp": "2024-01-01T10:00:00", "success": True})

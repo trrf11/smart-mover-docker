@@ -33,6 +33,7 @@
   <Config Name="Config Path" Target="/config" Default="/mnt/user/appdata/smart-mover" Mode="rw" Description="Configuration and logs storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/smart-mover</Config>
   <Config Name="Cache Drive" Target="/mnt/cache" Default="/mnt/cache" Mode="rw" Description="Path to cache drive" Type="Path" Display="always" Required="true" Mask="false">/mnt/cache</Config>
   <Config Name="Array Destination" Target="/mnt/disk1" Default="/mnt/disk1" Mode="rw" Description="Destination path on array" Type="Path" Display="always" Required="true" Mask="false">/mnt/disk1</Config>
+  <Config Name="Host Run Dir" Target="/host-run" Default="/var/run" Mode="ro" Description="Host /var/run (read-only) so Smart Mover can detect when the Unraid mover is running" Type="Path" Display="advanced" Required="false" Mask="false">/var/run</Config>
   <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User ID for permissions" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
   <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group ID for permissions" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
   <Config Name="Timezone" Target="TZ" Default="America/New_York" Mode="" Description="Timezone" Type="Variable" Display="advanced" Required="false" Mask="false">America/New_York</Config>

@@ -13,6 +13,8 @@ services:
       # - /mnt/cache:/mnt/cache:rw
       # Array destination (adjust path for your system)
       # - /mnt/disk1:/mnt/disk1:rw
+      # Host /var/run (read-only) so the Unraid mover can be detected
+      # - /var/run:/host-run:ro
     environment:
       - PUID=1000
       - PGID=1000

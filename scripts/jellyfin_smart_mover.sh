@@ -1219,14 +1219,25 @@ check_jq() {
     fi
 }
 
-# Function to check if mover is running
+# Function to check if Unraid's mover is running
+# In Docker, mount the host's /var/run read-only (e.g. to /host-run) and set
+# MOVER_PID_FILE accordingly, otherwise the host's pid file is invisible.
+MOVER_PID_FILE="${MOVER_PID_FILE:-/var/run/mover.pid}"
 is_mover_running() {
-    if [ -f /var/run/mover.pid ]; then
-        if kill -0 $(cat /var/run/mover.pid) 2>/dev/null; then
-            return 0  # Mover is running
-        fi
+    [ -f "$MOVER_PID_FILE" ] || return 1  # No pid file, mover not running
+    local pid
+    pid=$(cat "$MOVER_PID_FILE" 2>/dev/null)
+    [ -n "$pid" ] || return 1
+    # Same PID namespace (bare metal or --pid=host): verify the process is alive
+    if kill -0 "$pid" 2>/dev/null; then
+        return 0
     fi
-    return 1  # Mover is not running
+    # Inside a container host PIDs aren't visible, so trust the pid file.
+    # Unraid's mover removes it when it exits.
+    if [ -f /.dockerenv ]; then
+        return 0
+    fi
+    return 1  # Stale pid file
 }
 
 # Function to check if parity check is running

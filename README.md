@@ -27,6 +27,7 @@ docker run -d \
   -v /mnt/cache:/mnt/cache:rw \
   -v /mnt/disk1:/mnt/disk1:rw \
   -v /mnt/user/appdata/smart-mover:/config \
+  -v /var/run:/host-run:ro \
   -e PUID=99 \
   -e PGID=100 \
   -e TZ=America/New_York \
@@ -47,6 +48,7 @@ services:
       - /mnt/cache:/mnt/cache:rw
       - /mnt/disk1:/mnt/disk1:rw
       - /mnt/user/appdata/smart-mover:/config
+      - /var/run:/host-run:ro  # lets Smart Mover detect the Unraid mover
     environment:
       - PUID=99
       - PGID=100

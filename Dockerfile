@@ -38,6 +38,7 @@ ENV PUID=99
 ENV PGID=100
 ENV WEB_PORT=9898
 ENV TZ=America/New_York
+ENV MOVER_PID_FILE=/host-run/mover.pid
 
 # Expose web UI port
 EXPOSE 9898
